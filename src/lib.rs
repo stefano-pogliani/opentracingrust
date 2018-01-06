@@ -5,6 +5,8 @@ mod span_context;
 mod tracer;
 
 
+pub use self::carrier::ExtractFormat;
+pub use self::carrier::InjectFormat;
 pub use self::carrier::MapCarrier;
 
 pub use self::errors::Error;

@@ -1,5 +1,22 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::io;
+
+
+/// TODO
+pub enum ExtractFormat<'a> {
+    Binary(Box<&'a mut self::io::Read>),
+    HttpHeaders(Box<&'a MapCarrier>),
+    TextMap(Box<&'a MapCarrier>)
+}
+
+
+/// TODO
+pub enum InjectFormat<'a> {
+    Binary(Box<&'a mut self::io::Write>),
+    HttpHeaders(Box<&'a mut MapCarrier>),
+    TextMap(Box<&'a mut MapCarrier>)
+}
 
 
 /// TODO

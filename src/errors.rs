@@ -13,6 +13,12 @@ pub enum Error {
     SendError(self::mpsc::SendError<FinishedSpan>)
 }
 
+impl From<io::Error> for Error {
+    fn from(error: io::Error) -> Self {
+        Error::IoError(error)
+    }
+}
+
 
 /// TODO
 pub type Result<T> = self::result::Result<T, Error>;

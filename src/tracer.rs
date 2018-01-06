@@ -1,6 +1,9 @@
 use std::io;
 
+use super::ExtractFormat;
+use super::InjectFormat;
 use super::MapCarrier;
+
 use super::Result;
 use super::Span;
 use super::SpanContext;
@@ -9,34 +12,10 @@ use super::SpanContext;
 /// TODO
 pub trait TracerInterface {
     /// TODO
-    fn extract_binary(
-        &self, carrier: Box<&mut self::io::Read>
-    ) -> Result<Option<SpanContext>>;
+    fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>>;
 
     /// TODO
-    fn extract_http_headers(
-        &self, carrier: Box<&MapCarrier>
-    ) -> Result<Option<SpanContext>>;
-
-    /// TODO
-    fn extract_textmap(
-        &self, carrier: Box<&MapCarrier>
-    ) -> Result<Option<SpanContext>>;
-
-    /// TODO
-    fn inject_binary(
-        &self, context: &SpanContext, carrier: Box<&mut self::io::Write>
-    ) -> self::io::Result<()>;
-
-    /// TODO
-    fn inject_http_headers(
-        &self, context: &SpanContext, carrier: Box<&mut MapCarrier>
-    );
-
-    /// TODO
-    fn inject_textmap(
-        &self, context: &SpanContext, carrier: Box<&mut MapCarrier>
-    );
+    fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()>;
 
     /// TODO
     fn span(&self, name: &str) -> Span;
@@ -58,45 +37,58 @@ impl Tracer {
 }
 
 impl Tracer {
+    /// TODO
+    pub fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>> {
+        self.tracer.extract(fmt)
+    }
+
+    /// TODO
     pub fn extract_binary<Carrier: self::io::Read>(
         &self, carrier: &mut Carrier
     ) -> Result<Option<SpanContext>> {
-        self.tracer.extract_binary(Box::new(carrier))
+        self.extract(ExtractFormat::Binary(Box::new(carrier)))
     }
 
     /// TODO
     pub fn extract_http_headers<Carrier: MapCarrier>(
         &self, carrier: &Carrier
     ) -> Result<Option<SpanContext>> {
-        self.tracer.extract_http_headers(Box::new(carrier))
+        self.extract(ExtractFormat::HttpHeaders(Box::new(carrier)))
     }
 
     /// TODO
     pub fn extract_textmap<Carrier: MapCarrier>(
         &self, carrier: &Carrier
     ) -> Result<Option<SpanContext>> {
-        self.tracer.extract_textmap(Box::new(carrier))
+        self.extract(ExtractFormat::TextMap(Box::new(carrier)))
+    }
+
+    /// TODO
+    pub fn inject(
+        &self, context: &SpanContext, fmt: InjectFormat
+    ) -> Result<()> {
+        self.tracer.inject(context, fmt)
     }
 
     /// TODO
     pub fn inject_binary<Carrier: self::io::Write>(
         &self, context: &SpanContext, carrier: &mut Carrier
-    ) -> self::io::Result<()> {
-        self.tracer.inject_binary(context, Box::new(carrier))
+    ) -> Result<()> {
+        self.inject(context, InjectFormat::Binary(Box::new(carrier)))
     }
 
     /// TODO
     pub fn inject_http_headers<Carrier: MapCarrier>(
         &self, context: &SpanContext, carrier: &mut Carrier
-    ) {
-        self.tracer.inject_http_headers(context, Box::new(carrier));
+    ) -> Result<()> {
+        self.inject(context, InjectFormat::HttpHeaders(Box::new(carrier)))
     }
 
     /// TODO
     pub fn inject_textmap<Carrier: MapCarrier>(
         &self, context: &SpanContext, carrier: &mut Carrier
-    ) {
-        self.tracer.inject_textmap(context, Box::new(carrier));
+    ) -> Result<()> {
+        self.inject(context, InjectFormat::TextMap(Box::new(carrier)))
     }
 
     /// TODO
@@ -113,11 +105,12 @@ mod tests {
     use std::io::BufRead;
     use std::sync::mpsc;
 
-    use super::super::Error;
-    use super::super::Result;
+
+    use super::super::ExtractFormat;
+    use super::super::InjectFormat;
 
     use super::super::ImplWrapper;
-    use super::super::MapCarrier;
+    use super::super::Result;
     use super::super::Span;
     use super::super::SpanContext;
     use super::super::SpanSender;
@@ -136,89 +129,95 @@ mod tests {
         sender: SpanSender
     }
     impl TracerInterface for TestTracer {
-        fn extract_binary(
-            &self, carrier: Box<&mut self::io::Read>
-        ) -> Result<Option<SpanContext>> {
-            let mut reader = self::io::BufReader::new(carrier);
-            let mut name = String::new();
-            reader.read_line(&mut name).map_err(|e| Error::IoError(e))?;
+        fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>> {
+            match fmt {
+                ExtractFormat::Binary(carrier) => {
+                    let mut reader = self::io::BufReader::new(carrier);
+                    let mut name = String::new();
+                    reader.read_line(&mut name)?;
 
-            let mut context = SpanContext::new(ImplWrapper::new(TestContext {
-                name: name.trim().to_owned()
-            }));
-            for line in reader.lines() {
-                let line = line.map_err(|e| Error::IoError(e))?;
-                let cells: Vec<&str> = line.split(':').collect();
-                context.set_baggage_item(BaggageItem::new(cells[0], cells[1]));
-            }
-            Ok(Some(context))
-        }
+                    let mut context = SpanContext::new(ImplWrapper::new(
+                        TestContext { name: name.trim().to_owned() }
+                    ));
+                    for line in reader.lines() {
+                        let line = line?;
+                        let cells: Vec<&str> = line.split(':').collect();
+                        context.set_baggage_item(BaggageItem::new(cells[0], cells[1]));
+                    }
+                    Ok(Some(context))
+                }
 
-        fn extract_http_headers(
-            &self, carrier: Box<&MapCarrier>
-        ) -> Result<Option<SpanContext>> {
-            let mut context = SpanContext::new(ImplWrapper::new(TestContext {
-                name: carrier.get("Span-Name").unwrap()
-            }));
-            let items = carrier.find_items(Box::new(
-                |k| k.starts_with("Baggage-")
-            ));
-            for (key, value) in items {
-                context.set_baggage_item(BaggageItem::new(&key[8..], value));
-            }
-            Ok(Some(context))
-        }
+                ExtractFormat::HttpHeaders(carrier) => {
+                    let mut context = SpanContext::new(ImplWrapper::new(
+                        TestContext { name: carrier.get("Span-Name").unwrap() }
+                    ));
+                    let items = carrier.find_items(Box::new(
+                        |k| k.starts_with("Baggage-")
+                    ));
+                    for (key, value) in items {
+                        context.set_baggage_item(
+                            BaggageItem::new(&key[8..], value)
+                        );
+                    }
+                    Ok(Some(context))
+                }
 
-        fn extract_textmap(
-            &self, carrier: Box<&MapCarrier>
-        ) -> Result<Option<SpanContext>> {
-            let mut context = SpanContext::new(ImplWrapper::new(TestContext {
-                name: carrier.get("span-name").unwrap()
-            }));
-            let items = carrier.find_items(Box::new(
-                |k| k.starts_with("baggage-")
-            ));
-            for (key, value) in items {
-                context.set_baggage_item(BaggageItem::new(&key[8..], value));
-            }
-            Ok(Some(context))
-        }
-
-        fn inject_binary(
-            &self, context: &SpanContext, carrier: Box<&mut self::io::Write>
-        ) -> self::io::Result<()> {
-            let inner = context.impl_context::<TestContext>().unwrap();
-            carrier.write_fmt(format_args!("TraceId: {}\n", "123"))?;
-            carrier.write_fmt(format_args!("Span Name: {}\n", &inner.name))?;
-            for item in context.baggage_items() {
-                carrier.write_fmt(
-                    format_args!("Baggage-{}: {}\n", item.key(), item.value())
-                )?;
-            }
-            Ok(())
-        }
-
-        fn inject_http_headers(
-            &self, context: &SpanContext, carrier: Box<&mut MapCarrier>
-        ) {
-            let inner = context.impl_context::<TestContext>().unwrap();
-            carrier.set("Trace-Id", "123");
-            carrier.set("Span-Name", &inner.name);
-            for item in context.baggage_items() {
-                let key = format!("Baggage-{}", item.key());
-                carrier.set(&key, item.value());
+                ExtractFormat::TextMap(carrier) => {
+                    let mut context = SpanContext::new(ImplWrapper::new(
+                        TestContext { name: carrier.get("span-name").unwrap() }
+                    ));
+                    let items = carrier.find_items(Box::new(
+                        |k| k.starts_with("baggage-")
+                    ));
+                    for (key, value) in items {
+                        context.set_baggage_item(
+                            BaggageItem::new(&key[8..], value)
+                        );
+                    }
+                    Ok(Some(context))
+                }
             }
         }
 
-        fn inject_textmap(
-            &self, context: &SpanContext, carrier: Box<&mut MapCarrier>
-        ) {
-            let inner = context.impl_context::<TestContext>().unwrap();
-            carrier.set("trace-id", "123");
-            carrier.set("span-name", &inner.name);
-            for item in context.baggage_items() {
-                let key = format!("baggage-{}", item.key());
-                carrier.set(&key, item.value());
+        fn inject(
+            &self, context: &SpanContext, fmt: InjectFormat
+        ) -> Result<()> {
+            match fmt {
+                InjectFormat::Binary(carrier) => {
+                    let inner = context.impl_context::<TestContext>().unwrap();
+                    carrier.write_fmt(format_args!("TraceId: {}\n", "123"))?;
+                    carrier.write_fmt(
+                        format_args!("Span Name: {}\n", &inner.name)
+                    )?;
+                    for item in context.baggage_items() {
+                        carrier.write_fmt(format_args!(
+                            "Baggage-{}: {}\n", item.key(), item.value()
+                        ))?;
+                    }
+                    Ok(())
+                }
+
+                InjectFormat::HttpHeaders(carrier) => {
+                    let inner = context.impl_context::<TestContext>().unwrap();
+                    carrier.set("Trace-Id", "123");
+                    carrier.set("Span-Name", &inner.name);
+                    for item in context.baggage_items() {
+                        let key = format!("Baggage-{}", item.key());
+                        carrier.set(&key, item.value());
+                    }
+                    Ok(())
+                }
+
+                InjectFormat::TextMap(carrier) => {
+                    let inner = context.impl_context::<TestContext>().unwrap();
+                    carrier.set("trace-id", "123");
+                    carrier.set("span-name", &inner.name);
+                    for item in context.baggage_items() {
+                        let key = format!("baggage-{}", item.key());
+                        carrier.set(&key, item.value());
+                    }
+                    Ok(())
+                }
             }
         }
 
@@ -298,7 +297,7 @@ mod tests {
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();
-        tracer.inject_http_headers(span.context(), &mut map);
+        tracer.inject_http_headers(span.context(), &mut map).unwrap();
 
         let mut items: Vec<(String, String)> = map.iter()
             .map(|(k, v)| (k.clone(), v.clone()))
@@ -319,7 +318,7 @@ mod tests {
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();
-        tracer.inject_textmap(span.context(), &mut map);
+        tracer.inject_textmap(span.context(), &mut map).unwrap();
 
         let mut items: Vec<(String, String)> = map.iter()
             .map(|(k, v)| (k.clone(), v.clone()))

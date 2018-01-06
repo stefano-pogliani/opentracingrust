@@ -1,0 +1,6 @@
+[package]
+name = "opentracingrust"
+version = "0.1.0"
+authors = ["Stefano Pogliani <stefano@spogliani.net>"]
+
+[dependencies]

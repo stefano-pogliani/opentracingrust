@@ -19,6 +19,7 @@ pub use self::span_context::SpanContext;
 pub use self::span::FinishedSpan;
 pub use self::span::Span;
 pub use self::span::SpanReceiver;
+pub use self::span::SpanReference;
 pub use self::span::SpanSender;
 
 pub use self::tracer::Tracer;

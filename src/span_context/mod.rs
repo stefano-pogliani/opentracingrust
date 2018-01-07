@@ -63,6 +63,11 @@ impl SpanContext {
     }
 
     /// TODO
+    pub fn get_baggage_item(&self, key: &str) -> Option<&BaggageItem> {
+        self.baggage.iter().find(|x| x.key() == key)
+    }
+
+    /// TODO
     pub fn set_baggage_item(&mut self, item: BaggageItem) {
         self.baggage.retain(|x| x.key() != item.key());
         self.baggage.push(item);

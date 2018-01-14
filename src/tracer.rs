@@ -113,6 +113,8 @@ mod tests {
     use super::super::Result;
     use super::super::Span;
     use super::super::SpanContext;
+    use super::super::SpanReference;
+    use super::super::SpanReferenceAware;
     use super::super::SpanSender;
     use super::super::span_context::BaggageItem;
 
@@ -123,6 +125,9 @@ mod tests {
     #[derive(Debug, Clone)]
     struct TestContext {
         pub name: String
+    }
+    impl SpanReferenceAware for TestContext {
+        fn reference_span(&mut self, _: &SpanReference) {}
     }
 
     struct TestTracer {

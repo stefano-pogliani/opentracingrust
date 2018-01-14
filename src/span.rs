@@ -100,6 +100,7 @@ impl Span {
 impl Span {
     /// TODO
     fn reference_span(&mut self, reference: SpanReference) {
+        self.context.reference_span(&reference);
         match reference {
             SpanReference::ChildOf(ref parent) |
             SpanReference::FollowsFrom(ref parent) => {
@@ -134,6 +135,7 @@ mod tests {
 
     use super::super::ImplWrapper;
     use super::super::SpanContext;
+    use super::super::SpanReferenceAware;
     use super::super::span_context::BaggageItem;
 
     use super::FinishedSpan;
@@ -144,6 +146,9 @@ mod tests {
     #[derive(Debug, Clone)]
     struct TestContext {
         pub id: String
+    }
+    impl SpanReferenceAware for TestContext {
+        fn reference_span(&mut self, _: &SpanReference) {}
     }
 
     #[test]

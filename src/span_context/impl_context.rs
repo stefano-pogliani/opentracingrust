@@ -1,6 +1,8 @@
 use std::any::Any;
 use std::boxed::Box;
 
+use super::super::SpanReference;
+
 
 /// TODO
 pub trait ImplContext {
@@ -9,6 +11,9 @@ pub trait ImplContext {
 
     /// TODO
     fn clone(&self) -> Box<ImplContext>;
+
+    /// TODO
+    fn reference_span(&mut self, _reference: &SpanReference);
 }
 
 
@@ -24,7 +29,7 @@ impl<T: Any + Clone> ImplWrapper<T> {
     }
 }
 
-impl<T: Any + Clone> ImplContext for ImplWrapper<T> {
+impl<T: Any + Clone + SpanReferenceAware> ImplContext for ImplWrapper<T> {
     fn impl_context(&self) -> &Any {
         &self.inner
     }
@@ -34,17 +39,33 @@ impl<T: Any + Clone> ImplContext for ImplWrapper<T> {
             inner: self.inner.clone()
         })
     }
+
+    fn reference_span(&mut self, reference: &SpanReference) {
+        self.inner.reference_span(reference);
+    }
+}
+
+
+/// TODO
+pub trait SpanReferenceAware {
+    /// TODO
+    fn reference_span(&mut self, _reference: &SpanReference);
 }
 
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::SpanReference;
     use super::ImplContext;
     use super::ImplWrapper;
+    use super::SpanReferenceAware;
 
     #[derive(Debug, Clone)]
     struct TestContext {
         pub id: String
+    }
+    impl SpanReferenceAware for TestContext {
+        fn reference_span(&mut self, _: &SpanReference) {}
     }
 
     #[test]

@@ -8,6 +8,9 @@ mod impl_context;
 pub use self::baggage::BaggageItem;
 pub use self::impl_context::ImplContext;
 pub use self::impl_context::ImplWrapper;
+pub use self::impl_context::SpanReferenceAware;
+
+use super::SpanReference;
 
 
 /// TODO
@@ -68,6 +71,11 @@ impl SpanContext {
     }
 
     /// TODO
+    pub fn reference_span(&mut self, reference: &SpanReference) {
+        self.inner.reference_span(reference);
+    }
+
+    /// TODO
     pub fn set_baggage_item(&mut self, item: BaggageItem) {
         self.baggage.retain(|x| x.key() != item.key());
         self.baggage.push(item);
@@ -77,13 +85,20 @@ impl SpanContext {
 
 #[cfg(test)]
 mod tests {
+    use super::super::SpanReference;
+    use super::impl_context::SpanReferenceAware;
+
     use super::BaggageItem;
     use super::ImplWrapper;
     use super::SpanContext;
 
+
     #[derive(Clone)]
     struct TestContext {
         pub id: String
+    }
+    impl SpanReferenceAware for TestContext {
+        fn reference_span(&mut self, _: &SpanReference) {}
     }
 
     #[test]

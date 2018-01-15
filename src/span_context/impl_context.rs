@@ -1,11 +1,12 @@
 use std::any::Any;
 use std::boxed::Box;
+use std::marker::Send;
 
 use super::super::SpanReference;
 
 
 /// TODO
-pub trait ImplContext {
+pub trait ImplContext : Send {
     /// TODO
     fn impl_context(&self) -> &Any;
 
@@ -18,18 +19,18 @@ pub trait ImplContext {
 
 
 /// TODO
-pub struct ImplWrapper<T: Any + Clone> {
+pub struct ImplWrapper<T: Any + Clone + Send> {
     inner: T
 }
 
-impl<T: Any + Clone> ImplWrapper<T> {
+impl<T: Any + Clone + Send> ImplWrapper<T> {
     /// TODO
     pub fn new(inner: T) -> ImplWrapper<T> {
         ImplWrapper { inner }
     }
 }
 
-impl<T: Any + Clone + SpanReferenceAware> ImplContext for ImplWrapper<T> {
+impl<T: Any + Clone + Send + SpanReferenceAware> ImplContext for ImplWrapper<T> {
     fn impl_context(&self) -> &Any {
         &self.inner
     }

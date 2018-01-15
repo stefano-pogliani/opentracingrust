@@ -29,6 +29,8 @@ pub trait MapCarrier {
     ///   `TextMapCarrier` trait objects (which do not allow generics).
     ///
     ///   If a better interface comes up re-evaluate this method.
+    ///
+    /// TODO: Can I Box<Iterator<Item=(&str, &str)>> return type?
     fn find_items(&self, f: Box<Fn(&String) -> bool>) -> Vec<(String, String)>;
 
     /// TODO

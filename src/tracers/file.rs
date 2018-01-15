@@ -124,10 +124,10 @@ impl FileTracer {
             "Unsupported span, was it created by FileTracer?"
         );
         let mut buffer = String::new();
-        buffer.push_str(&format!("Trace ID: {}\n", context.trace_id));
-        buffer.push_str(&format!("Span ID: {}\n", context.span_id));
+        buffer.push_str(&format!("==>> Trace ID: {}\n", context.trace_id));
+        buffer.push_str(&format!("===> Span ID: {}\n", context.span_id));
 
-        buffer.push_str("References: [\n");
+        buffer.push_str("===> References: [\n");
         for reference in span.references() {
             let ref_id = match reference {
                 &SpanReference::ChildOf(ref parent) |
@@ -143,15 +143,15 @@ impl FileTracer {
                 &SpanReference::ChildOf(_) => "Child of span ID",
                 &SpanReference::FollowsFrom(_) => "Follows from span ID"
             };
-            buffer.push_str(&format!("  * {}: {}\n", ref_type, ref_id));
+            buffer.push_str(&format!("===>   * {}: {}\n", ref_type, ref_id));
         }
-        buffer.push_str("]\n");
+        buffer.push_str("===> ]\n");
 
-        buffer.push_str("Baggage items: [\n");
+        buffer.push_str("===> Baggage items: [\n");
         for item in span.context().baggage_items() {
-            buffer.push_str(&format!("  * {}: {}\n", item.key(), item.value()));
+            buffer.push_str(&format!("===>   * {}: {}\n", item.key(), item.value()));
         }
-        buffer.push_str("]\n");
+        buffer.push_str("===> ]\n");
         file.write_all(buffer.as_bytes())
     }
 }
@@ -416,17 +416,17 @@ mod tests {
 
             let buffer = String::from_utf8(buffer).unwrap();
             let mut buffer = buffer.split('\n');
-            assert_eq!(buffer.next().unwrap(), "Trace ID: 123456");
+            assert_eq!(buffer.next().unwrap(), "==>> Trace ID: 123456");
 
             let buffer: Vec<&str> = buffer.skip(1).collect();
             assert_eq!(buffer, [
-                "References: [",
-                "  * Child of span ID: 123",
-                "  * Follows from span ID: 456",
-                "]",
-                "Baggage items: [",
-                "  * TestKey: Test Value",
-                "]",
+                "===> References: [",
+                "===>   * Child of span ID: 123",
+                "===>   * Follows from span ID: 456",
+                "===> ]",
+                "===> Baggage items: [",
+                "===>   * TestKey: Test Value",
+                "===> ]",
                 ""
             ]);
         }

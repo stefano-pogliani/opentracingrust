@@ -45,7 +45,7 @@ References
 
   * Documentation: TODO
   * Crates.io page: TODO
-  * Repository: TODO
+  * Repository: https://github.com/stefano-pogliani/opentracingrust
   * Available tracers: https://crates.io/search?q=opentracingrust
 
 

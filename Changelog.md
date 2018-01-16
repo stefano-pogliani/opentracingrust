@@ -1,4 +1,4 @@
-Version 0.1.0 (Unreleased)
+Version 0.1.0 (2018-01-16)
 ==========================
 
 Features

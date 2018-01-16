@@ -43,8 +43,8 @@ This means that:
 References
 ----------
 
-  * Documentation: TODO
-  * Crates.io page: TODO
+  * Documentation: https://docs.rs/opentracingrust/
+  * Crates.io page: https://crates.io/crates/opentracingrust
   * Repository: https://github.com/stefano-pogliani/opentracingrust
   * Available tracers: https://crates.io/search?q=opentracingrust
 

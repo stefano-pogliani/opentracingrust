@@ -3,5 +3,16 @@ name = "opentracingrust"
 version = "0.1.0"
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 
+description = "opentracing.io library for rust"
+#documentation = "TODO"
+#homepage = "TODO"
+#repository = "TODO"
+readme = "Readme.md"
+keywords = ["opentracing", "tracing"]
+license = "MIT"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
 [dependencies]
 rand = "^0.4.0"

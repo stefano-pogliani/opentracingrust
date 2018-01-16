@@ -5,6 +5,11 @@ A rust crate implementing the [OpenTracing](http://opentracing.io/) API.
 This crate must be complemented by a tracer implementation to send
 information to a supported distributed tracer.
 
+Alpha notice
+------------
+This library is in alpha state!
+This means that many essential features are missing and the API will change.
+
 
 Why OpenTracing?
 ----------------

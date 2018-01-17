@@ -7,6 +7,7 @@ use super::MapCarrier;
 use super::Result;
 use super::Span;
 use super::SpanContext;
+use super::StartOptions;
 
 
 /// TODO
@@ -18,7 +19,7 @@ pub trait TracerInterface {
     fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()>;
 
     /// TODO
-    fn span(&self, name: &str) -> Span;
+    fn span(&self, name: &str, options: &StartOptions) -> Span;
 }
 
 
@@ -92,8 +93,8 @@ impl Tracer {
     }
 
     /// TODO
-    pub fn span(&self, name: &str) -> Span {
-        self.tracer.span(name)
+    pub fn span(&self, name: &str, options: StartOptions) -> Span {
+        self.tracer.span(name, &options)
     }
 }
 
@@ -116,6 +117,7 @@ mod tests {
     use super::super::SpanReference;
     use super::super::SpanReferenceAware;
     use super::super::SpanSender;
+    use super::super::StartOptions;
     use super::super::span_context::BaggageItem;
 
     use super::Tracer;
@@ -226,7 +228,7 @@ mod tests {
             }
         }
 
-        fn span(&self, name: &str) -> Span {
+        fn span(&self, name: &str, _options: &StartOptions) -> Span {
             let context = SpanContext::new(ImplWrapper::new(TestContext {
                 name: String::from("test-span")
             }));
@@ -239,7 +241,7 @@ mod tests {
     fn create_span() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let _span: Span = tracer.span("test-span");
+        let _span: Span = tracer.span("test-span", StartOptions::default());
     }
 
     #[test]
@@ -283,7 +285,7 @@ mod tests {
     fn inject_binary() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let mut span = tracer.span("test-span");
+        let mut span = tracer.span("test-span", StartOptions::default());
         span.set_baggage_item("a", "b");
 
         let mut buffer: Vec<u8> = Vec::new();
@@ -298,7 +300,7 @@ mod tests {
     fn inject_http_headers() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let mut span = tracer.span("test-span");
+        let mut span = tracer.span("test-span", StartOptions::default());
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();
@@ -319,7 +321,7 @@ mod tests {
     fn inject_textmap() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let mut span = tracer.span("test-span");
+        let mut span = tracer.span("test-span", StartOptions::default());
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();

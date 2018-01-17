@@ -1,3 +1,11 @@
+Version 0.2.0 (Unreleased)
+==========================
+
+Breaking Changes
+----------------
+- Extend `Tracer::span` with `StartOptions`.
+
+
 Version 0.1.1 (2018-01-16)
 ==========================
 

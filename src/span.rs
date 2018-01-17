@@ -129,6 +129,17 @@ pub type SpanReceiver = mpsc::Receiver<FinishedSpan>;
 pub type SpanSender = mpsc::Sender<FinishedSpan>;
 
 
+/// TODO
+pub struct StartOptions {
+}
+
+impl Default for StartOptions {
+    fn default() -> StartOptions {
+        StartOptions {}
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc;

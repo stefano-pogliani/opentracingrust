@@ -15,6 +15,7 @@ use super::super::SpanReceiver;
 use super::super::SpanReference;
 use super::super::SpanReferenceAware;
 use super::super::SpanSender;
+use super::super::StartOptions;
 
 use super::super::ExtractFormat;
 use super::super::InjectFormat;
@@ -96,7 +97,7 @@ impl TracerInterface for FileTracer {
         }
     }
 
-    fn span(&self, name: &str) -> Span {
+    fn span(&self, name: &str, _options: &StartOptions) -> Span {
         let trace_id = random::<u64>();
         let span_id = random::<u64>();
         let context = SpanContext::new(ImplWrapper::new(FileTracerContext {
@@ -205,6 +206,8 @@ mod tests {
 
 
     mod span {
+        use super::super::super::super::StartOptions;
+
         use super::super::FileTracer;
         use super::super::FileTracerContext;
         use super::make_context;
@@ -396,7 +399,7 @@ mod tests {
         #[test]
         fn create() {
             let (tracer, _) = make_tracer();
-            let span = tracer.span("test1");
+            let span = tracer.span("test1", StartOptions::default());
             let context = span.context().impl_context::<FileTracerContext>();
             context.unwrap();
         }
@@ -404,7 +407,7 @@ mod tests {
         #[test]
         fn write() {
             let (tracer, receiver) = make_tracer();
-            let mut span = tracer.span("test1");
+            let mut span = tracer.span("test1", StartOptions::default());
             span.child_of(make_context(123456, 123));
             span.follows(make_context(123456, 456));
             span.set_baggage_item("TestKey", "Test Value");

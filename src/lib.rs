@@ -28,6 +28,7 @@ pub use self::span::Span;
 pub use self::span::SpanReceiver;
 pub use self::span::SpanReference;
 pub use self::span::SpanSender;
+pub use self::span::StartOptions;
 
 pub use self::tracer::Tracer;
 pub use self::tracer::TracerInterface;

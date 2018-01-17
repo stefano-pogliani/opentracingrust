@@ -29,6 +29,7 @@ use std::time;
 
 // Core library imports.
 use opentracingrust::SpanContext;
+use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
 
 // Tracer specific imports.
@@ -56,7 +57,7 @@ fn main() {
     });
 
     // Now that our tracer is set up we can create spans to trace operations.
-    let root = tracer.span("main");
+    let root = tracer.span("main", StartOptions::default());
     let f4 = fibonacci(8, &tracer, root.context().clone());
     println!("fibonacci(8) = {}", f4);
 
@@ -76,7 +77,7 @@ fn fibonacci(n: u64, tracer: &Tracer, parent: SpanContext) -> u64 {
     if n <= 2 {
         // We create a new span for this operation and set the parent span.
         // Since this is the base case we finish the span immediately.
-        let mut span = tracer.span("fibonacci base case");
+        let mut span = tracer.span("fibonacci base case", StartOptions::default());
         span.child_of(parent);
         span.finish().unwrap();
         1
@@ -84,7 +85,7 @@ fn fibonacci(n: u64, tracer: &Tracer, parent: SpanContext) -> u64 {
         // We create a new span for this operation and set the parent span.
         // Since this is the iterative case we recourse passing the new span's
         // context as the new parent span.
-        let mut span = tracer.span("fibonacci iterative case");
+        let mut span = tracer.span("fibonacci iterative case", StartOptions::default());
         span.child_of(parent);
         let n1 = fibonacci(n - 1, tracer, span.context().clone());
         let n2 = fibonacci(n - 2, tracer, span.context().clone());

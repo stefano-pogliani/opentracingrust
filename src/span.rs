@@ -1,4 +1,5 @@
 use std::sync::mpsc;
+use std::time::SystemTime;
 
 use super::Error;
 use super::Result;
@@ -11,14 +12,21 @@ use super::span_context::BaggageItem;
 #[derive(Clone, Debug)]
 pub struct FinishedSpan {
     context: SpanContext,
+    finish_time: SystemTime,
     name: String,
     references: Vec<SpanReference>,
+    start_time: SystemTime,
 }
 
 impl FinishedSpan {
     /// TODO
     pub fn context(&self) -> &SpanContext {
         &self.context
+    }
+
+    /// TODO
+    pub fn finish_time(&self) -> &SystemTime {
+        &self.finish_time
     }
 
     /// TODO
@@ -30,6 +38,11 @@ impl FinishedSpan {
     pub fn references(&self) -> &Vec<SpanReference> {
         &self.references
     }
+
+    /// TODO
+    pub fn start_time(&self) -> &SystemTime {
+        &self.start_time
+    }
 }
 
 
@@ -37,19 +50,26 @@ impl FinishedSpan {
 #[derive(Clone, Debug)]
 pub struct Span {
     context: SpanContext,
+    finish_time: Option<SystemTime>,
     name: String,
     references: Vec<SpanReference>,
     sender: SpanSender,
+    start_time: SystemTime,
 }
 
 impl Span {
     /// TODO
-    pub fn new(name: &str, context: SpanContext, sender: SpanSender) -> Span {
+    pub fn new(
+        name: &str, context: SpanContext, options: &StartOptions,
+        sender: SpanSender
+    ) -> Span {
         Span {
             context,
+            finish_time: None,
             name: String::from(name),
             references: Vec::new(),
-            sender: sender
+            sender,
+            start_time: options.start_time.unwrap_or_else(SystemTime::now),
         }
     }
 }
@@ -66,11 +86,18 @@ impl Span {
     }
 
     /// TODO
+    pub fn finish_time(&mut self, finish_time: SystemTime) {
+        self.finish_time = Some(finish_time);
+    }
+
+    /// TODO
     pub fn finish(self) -> Result<()> {
         let finished = FinishedSpan {
             context: self.context,
+            finish_time: self.finish_time.unwrap_or_else(SystemTime::now),
             name: self.name,
-            references: self.references
+            references: self.references,
+            start_time: self.start_time,
         };
         self.sender.send(finished).map_err(|e| Error::SendError(e))?;
         Ok(())
@@ -131,11 +158,22 @@ pub type SpanSender = mpsc::Sender<FinishedSpan>;
 
 /// TODO
 pub struct StartOptions {
+    start_time: Option<SystemTime>
+}
+
+impl StartOptions {
+    /// TODO
+    pub fn start_time(mut self, start_time: SystemTime) -> StartOptions {
+        self.start_time = Some(start_time);
+        self
+    }
 }
 
 impl Default for StartOptions {
     fn default() -> StartOptions {
-        StartOptions {}
+        StartOptions {
+            start_time: None
+        }
     }
 }
 
@@ -143,14 +181,18 @@ impl Default for StartOptions {
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc;
+    use std::time::Duration;
+    use std::time::SystemTime;
 
     use super::super::ImplWrapper;
     use super::super::SpanContext;
     use super::super::SpanReferenceAware;
+    use super::super::StartOptions;
     use super::super::span_context::BaggageItem;
 
     use super::FinishedSpan;
     use super::Span;
+    use super::SpanReceiver;
     use super::SpanReference;
 
 
@@ -158,17 +200,49 @@ mod tests {
     struct TestContext {
         pub id: String
     }
+    impl TestContext {
+        fn new(options: StartOptions) -> (Span, SpanReceiver) {
+            let (sender, receiver) = mpsc::channel();
+            let context = SpanContext::new(ImplWrapper::new(TestContext {
+                id: String::from("test-id")
+            }));
+            (Span::new("test-span", context, &options, sender), receiver)
+        }
+    }
     impl SpanReferenceAware for TestContext {
         fn reference_span(&mut self, _: &SpanReference) {}
     }
 
+
+    #[test]
+    fn finish_span_on_finish() {
+        // Can't mock SystemTime::now() to a fixed value.
+        // Check finish time is in a range [now, now + ten minutes].
+        let about_now = SystemTime::now();
+        let options = StartOptions::default();
+        let (span, receiver) = TestContext::new(options);
+        let about_soon = about_now + Duration::from_secs(600);
+        span.finish().unwrap();
+        let span = receiver.recv().unwrap();
+        assert!(about_now <= span.finish_time, "Finish time too old");
+        assert!(span.finish_time <= about_soon, "Finish time too new");
+    }
+
+    #[test]
+    fn finish_span_at_finish_time() {
+        let ten_minutes_ago = SystemTime::now() + Duration::from_secs(600);
+        let options = StartOptions::default();
+        let (mut span, receiver) = TestContext::new(options);
+        span.finish_time(ten_minutes_ago);
+        span.finish().unwrap();
+        let span = receiver.recv().unwrap();
+        assert_eq!(span.finish_time, ten_minutes_ago);
+    }
+
     #[test]
     fn start_span_on_creation() {
-        let (sender, _) = mpsc::channel();
-        let context = SpanContext::new(ImplWrapper::new(TestContext {
-            id: String::from("test-id")
-        }));
-        let _span: Span = Span::new("test-span", context, sender);
+        let options = StartOptions::default();
+        let (_span, _): (Span, _) = TestContext::new(options);
     }
 
     #[test]
@@ -177,7 +251,8 @@ mod tests {
         let context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id")
         }));
-        let span: Span = Span::new("test-span", context, sender);
+        let options = StartOptions::default();
+        let span: Span = Span::new("test-span", context, &options, sender);
         span.finish().unwrap();
         let _finished: FinishedSpan = receiver.recv().unwrap();
     }
@@ -188,7 +263,8 @@ mod tests {
         let context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-1")
         }));
-        let mut span = Span::new("test-span", context, sender);
+        let options = StartOptions::default();
+        let mut span = Span::new("test-span", context, &options, sender);
         let mut context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-2")
         }));
@@ -211,7 +287,8 @@ mod tests {
         let context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-1")
         }));
-        let mut span = Span::new("test-span", context, sender);
+        let options = StartOptions::default();
+        let mut span = Span::new("test-span", context, &options, sender);
         let mut context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-2")
         }));
@@ -226,5 +303,36 @@ mod tests {
         }
         let item = span.get_baggage_item("a").unwrap();
         assert_eq!(item.value(), "b");
+    }
+
+
+    mod start_options {
+        use std::time::Duration;
+        use std::time::SystemTime;
+
+        use super::super::StartOptions;
+        use super::TestContext;
+
+
+        #[test]
+        fn starts_now_by_default() {
+            // Can't mock SystemTime::now() to a fixed value.
+            // Check start time is in a range [now, now + ten minutes].
+            let about_now = SystemTime::now();
+            let options = StartOptions::default();
+            let (span, _) = TestContext::new(options);
+            let about_soon = about_now + Duration::from_secs(600);
+            assert!(about_now <= span.start_time, "Start time too old");
+            assert!(span.start_time <= about_soon, "Start time too new");
+        }
+
+        #[test]
+        fn start_time_set() {
+            let ten_minutes_ago = SystemTime::now() - Duration::from_secs(600);
+            let options = StartOptions::default()
+                .start_time(ten_minutes_ago.clone());
+            let (span, _) = TestContext::new(options);
+            assert_eq!(span.start_time, ten_minutes_ago);
+        }
     }
 }

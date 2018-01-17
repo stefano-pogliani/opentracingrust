@@ -228,11 +228,11 @@ mod tests {
             }
         }
 
-        fn span(&self, name: &str, _options: &StartOptions) -> Span {
+        fn span(&self, name: &str, options: &StartOptions) -> Span {
             let context = SpanContext::new(ImplWrapper::new(TestContext {
                 name: String::from("test-span")
             }));
-            Span::new(name, context, self.sender.clone())
+            Span::new(name, context, options, self.sender.clone())
         }
     }
 

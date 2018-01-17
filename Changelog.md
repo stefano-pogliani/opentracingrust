@@ -5,6 +5,12 @@ Breaking Changes
 ----------------
 - Extend `Tracer::span` with `StartOptions`.
 
+Features
+--------
+- Pass span start time.
+- Span stores start time.
+- Span stores finish time.
+
 
 Version 0.1.1 (2018-01-16)
 ==========================

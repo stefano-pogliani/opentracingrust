@@ -181,8 +181,6 @@ impl Default for StartOptions {
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc;
-    use std::time::Duration;
-    use std::time::SystemTime;
 
     use super::super::ImplWrapper;
     use super::super::SpanContext;
@@ -213,31 +211,6 @@ mod tests {
         fn reference_span(&mut self, _: &SpanReference) {}
     }
 
-
-    #[test]
-    fn finish_span_on_finish() {
-        // Can't mock SystemTime::now() to a fixed value.
-        // Check finish time is in a range [now, now + ten minutes].
-        let about_now = SystemTime::now();
-        let options = StartOptions::default();
-        let (span, receiver) = TestContext::new(options);
-        let about_soon = about_now + Duration::from_secs(600);
-        span.finish().unwrap();
-        let span = receiver.recv().unwrap();
-        assert!(about_now <= span.finish_time, "Finish time too old");
-        assert!(span.finish_time <= about_soon, "Finish time too new");
-    }
-
-    #[test]
-    fn finish_span_at_finish_time() {
-        let ten_minutes_ago = SystemTime::now() + Duration::from_secs(600);
-        let options = StartOptions::default();
-        let (mut span, receiver) = TestContext::new(options);
-        span.finish_time(ten_minutes_ago);
-        span.finish().unwrap();
-        let span = receiver.recv().unwrap();
-        assert_eq!(span.finish_time, ten_minutes_ago);
-    }
 
     #[test]
     fn start_span_on_creation() {
@@ -306,13 +279,38 @@ mod tests {
     }
 
 
-    mod start_options {
+    mod times {
         use std::time::Duration;
         use std::time::SystemTime;
 
         use super::super::StartOptions;
         use super::TestContext;
 
+
+        #[test]
+        fn finish_span_on_finish() {
+            // Can't mock SystemTime::now() to a fixed value.
+            // Check finish time is in a range [now, now + ten minutes].
+            let about_now = SystemTime::now();
+            let options = StartOptions::default();
+            let (span, receiver) = TestContext::new(options);
+            let about_soon = about_now + Duration::from_secs(600);
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            assert!(about_now <= span.finish_time, "Finish time too old");
+            assert!(span.finish_time <= about_soon, "Finish time too new");
+        }
+
+        #[test]
+        fn finish_span_at_finish_time() {
+            let in_ten_minutes = SystemTime::now() + Duration::from_secs(600);
+            let options = StartOptions::default();
+            let (mut span, receiver) = TestContext::new(options);
+            span.finish_time(in_ten_minutes);
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            assert_eq!(span.finish_time, in_ten_minutes);
+        }
 
         #[test]
         fn starts_now_by_default() {

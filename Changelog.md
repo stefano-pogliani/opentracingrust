@@ -7,6 +7,7 @@ Breaking Changes
 
 Features
 --------
+- FileTracer prints durations.
 - Pass span initial references.
 - Pass span start time.
 - Span stores finish time.

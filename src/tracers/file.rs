@@ -128,6 +128,13 @@ impl FileTracer {
         buffer.push_str(&format!("==>> Trace ID: {}\n", context.trace_id));
         buffer.push_str(&format!("===> Span ID: {}\n", context.span_id));
 
+        let finish = span.finish_time();
+        let start = span.start_time().clone();
+        let duration = finish.duration_since(start).unwrap();
+        let secs = duration.as_secs() as f64;
+        let delta = secs + duration.subsec_nanos() as f64 * 1e-9;
+        buffer.push_str(&format!("===> Span Duration: {}\n", delta));
+
         buffer.push_str("===> References: [\n");
         for reference in span.references() {
             let ref_id = match reference {
@@ -421,7 +428,7 @@ mod tests {
             let mut buffer = buffer.split('\n');
             assert_eq!(buffer.next().unwrap(), "==>> Trace ID: 123456");
 
-            let buffer: Vec<&str> = buffer.skip(1).collect();
+            let buffer: Vec<&str> = buffer.skip(2).collect();
             assert_eq!(buffer, [
                 "===> References: [",
                 "===>   * Child of span ID: 123",

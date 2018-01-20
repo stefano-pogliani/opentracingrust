@@ -7,6 +7,7 @@ Breaking Changes
 
 Features
 --------
+- Auto finishing spans: spans can finish themselves when dropped.
 - FileTracer prints durations.
 - Pass span initial references.
 - Pass span start time.

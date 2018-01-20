@@ -9,6 +9,30 @@ use super::span_context::BaggageItem;
 
 
 /// TODO
+///
+/// Structure invariant: An AutoFinishingSpan *always* contains a `Span`.
+///   An AutoFinishingSpan is only created with a `Some(span)`.
+///   The `Drop::drop` method is the only method allowed to leave
+///   the AutoFinishingSpan with an inner `None`.
+#[derive(Clone, Debug)]
+pub struct AutoFinishingSpan(Option<Span>);
+
+impl AutoFinishingSpan {
+    pub fn new(span: Span) -> AutoFinishingSpan {
+        AutoFinishingSpan(Some(span))
+    }
+}
+
+impl Drop for AutoFinishingSpan {
+    fn drop(&mut self) {
+        if let Some(span) = self.0.take() {
+            span.finish().expect("Failed to auto-finish span");
+        }
+    }
+}
+
+
+/// TODO
 #[derive(Clone, Debug)]
 pub struct FinishedSpan {
     context: SpanContext,
@@ -79,6 +103,11 @@ impl Span {
 }
 
 impl Span {
+    /// TODO
+    pub fn auto_finish(self) -> AutoFinishingSpan {
+        AutoFinishingSpan::new(self)
+    }
+
     /// TODO
     pub fn child_of(&mut self, parent: SpanContext) {
         self.reference_span(SpanReference::ChildOf(parent));
@@ -203,6 +232,7 @@ impl Default for StartOptions {
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc;
+    use std::time::Duration;
 
     use super::super::ImplWrapper;
     use super::super::SpanContext;
@@ -233,6 +263,16 @@ mod tests {
         fn reference_span(&mut self, _: &SpanReference) {}
     }
 
+
+    #[test]
+    fn autoclose_finish_span_on_drop() {
+        let options = StartOptions::default();
+        let (span, receiver) = TestContext::new(options);
+        {
+            span.auto_finish();
+        }
+        receiver.recv_timeout(Duration::from_secs(1)).unwrap();
+    }
 
     #[test]
     fn start_span_on_creation() {

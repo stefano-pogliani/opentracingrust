@@ -74,19 +74,17 @@ fn main() {
 }
 
 fn fibonacci(n: u64, tracer: &Tracer, parent: SpanContext) -> u64 {
+    // To create a new span for this operation set the parent span.
+    let options = StartOptions::default().child_of(parent);
     if n <= 2 {
-        // We create a new span for this operation and set the parent span.
         // Since this is the base case we finish the span immediately.
-        let mut span = tracer.span("fibonacci base case", StartOptions::default());
-        span.child_of(parent);
+        let span = tracer.span("fibonacci base case", options);
         span.finish().unwrap();
         1
     } else {
-        // We create a new span for this operation and set the parent span.
         // Since this is the iterative case we recourse passing the new span's
         // context as the new parent span.
-        let mut span = tracer.span("fibonacci iterative case", StartOptions::default());
-        span.child_of(parent);
+        let span = tracer.span("fibonacci iterative case", options);
         let n1 = fibonacci(n - 1, tracer, span.context().clone());
         let n2 = fibonacci(n - 2, tracer, span.context().clone());
         // Once the recoursive operations terminate we can close the current span.

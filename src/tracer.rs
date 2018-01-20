@@ -19,7 +19,7 @@ pub trait TracerInterface {
     fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()>;
 
     /// TODO
-    fn span(&self, name: &str, options: &StartOptions) -> Span;
+    fn span(&self, name: &str, options: StartOptions) -> Span;
 }
 
 
@@ -94,7 +94,7 @@ impl Tracer {
 
     /// TODO
     pub fn span(&self, name: &str, options: StartOptions) -> Span {
-        self.tracer.span(name, &options)
+        self.tracer.span(name, options)
     }
 }
 
@@ -228,7 +228,7 @@ mod tests {
             }
         }
 
-        fn span(&self, name: &str, options: &StartOptions) -> Span {
+        fn span(&self, name: &str, options: StartOptions) -> Span {
             let context = SpanContext::new(ImplWrapper::new(TestContext {
                 name: String::from("test-span")
             }));

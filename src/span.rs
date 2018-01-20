@@ -60,17 +60,21 @@ pub struct Span {
 impl Span {
     /// TODO
     pub fn new(
-        name: &str, context: SpanContext, options: &StartOptions,
+        name: &str, context: SpanContext, options: StartOptions,
         sender: SpanSender
     ) -> Span {
-        Span {
+        let mut span = Span {
             context,
             finish_time: None,
             name: String::from(name),
             references: Vec::new(),
             sender,
             start_time: options.start_time.unwrap_or_else(SystemTime::now),
+        };
+        for reference in options.references {
+            span.reference_span(reference);
         }
+        span
     }
 }
 
@@ -158,12 +162,29 @@ pub type SpanSender = mpsc::Sender<FinishedSpan>;
 
 /// TODO
 pub struct StartOptions {
-    start_time: Option<SystemTime>
+    references: Vec<SpanReference>,
+    start_time: Option<SystemTime>,
 }
 
 impl StartOptions {
     /// TODO
-    pub fn start_time(mut self, start_time: SystemTime) -> StartOptions {
+    pub fn child_of(self, parent: SpanContext) -> Self {
+        self.reference_span(SpanReference::ChildOf(parent))
+    }
+
+    /// TODO
+    pub fn follows(self, parent: SpanContext) -> Self {
+        self.reference_span(SpanReference::FollowsFrom(parent))
+    }
+
+    /// TODO
+    pub fn reference_span(mut self, reference: SpanReference) -> Self {
+        self.references.push(reference);
+        self
+    }
+
+    /// TODO
+    pub fn start_time(mut self, start_time: SystemTime) -> Self {
         self.start_time = Some(start_time);
         self
     }
@@ -172,7 +193,8 @@ impl StartOptions {
 impl Default for StartOptions {
     fn default() -> StartOptions {
         StartOptions {
-            start_time: None
+            references: Vec::new(),
+            start_time: None,
         }
     }
 }
@@ -204,7 +226,7 @@ mod tests {
             let context = SpanContext::new(ImplWrapper::new(TestContext {
                 id: String::from("test-id")
             }));
-            (Span::new("test-span", context, &options, sender), receiver)
+            (Span::new("test-span", context, options, sender), receiver)
         }
     }
     impl SpanReferenceAware for TestContext {
@@ -214,8 +236,7 @@ mod tests {
 
     #[test]
     fn start_span_on_creation() {
-        let options = StartOptions::default();
-        let (_span, _): (Span, _) = TestContext::new(options);
+        let (_span, _): (Span, _) = TestContext::new(StartOptions::default());
     }
 
     #[test]
@@ -225,7 +246,7 @@ mod tests {
             id: String::from("test-id")
         }));
         let options = StartOptions::default();
-        let span: Span = Span::new("test-span", context, &options, sender);
+        let span: Span = Span::new("test-span", context, options, sender);
         span.finish().unwrap();
         let _finished: FinishedSpan = receiver.recv().unwrap();
     }
@@ -237,7 +258,7 @@ mod tests {
             id: String::from("test-id-1")
         }));
         let options = StartOptions::default();
-        let mut span = Span::new("test-span", context, &options, sender);
+        let mut span = Span::new("test-span", context, options, sender);
         let mut context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-2")
         }));
@@ -261,7 +282,7 @@ mod tests {
             id: String::from("test-id-1")
         }));
         let options = StartOptions::default();
-        let mut span = Span::new("test-span", context, &options, sender);
+        let mut span = Span::new("test-span", context, options, sender);
         let mut context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-2")
         }));
@@ -278,6 +299,67 @@ mod tests {
         assert_eq!(item.value(), "b");
     }
 
+    mod references {
+        use super::super::super::ImplWrapper;
+
+        use super::super::SpanContext;
+        use super::super::SpanReference;
+        use super::super::StartOptions;
+
+        use super::TestContext;
+
+
+        #[test]
+        fn child_of() {
+            let parent = SpanContext::new(ImplWrapper::new(TestContext {
+                id: String::from("test-id")
+            }));
+            let options = StartOptions::default()
+                .child_of(parent);
+            let (span, _) = TestContext::new(options);
+            match span.references().get(0) {
+                Some(&SpanReference::ChildOf(_)) => (),
+                Some(_) => panic!("Invalid span reference"),
+                None => panic!("Missing span reference")
+            }
+        }
+
+        #[test]
+        fn follows() {
+            let parent = SpanContext::new(ImplWrapper::new(TestContext {
+                id: String::from("test-id")
+            }));
+            let options = StartOptions::default()
+                .follows(parent);
+            let (span, _) = TestContext::new(options);
+            match span.references().get(0) {
+                Some(&SpanReference::FollowsFrom(_)) => (),
+                Some(_) => panic!("Invalid span reference"),
+                None => panic!("Missing span reference")
+            }
+        }
+
+        #[test]
+        fn multi_refs() {
+            let parent = SpanContext::new(ImplWrapper::new(TestContext {
+                id: String::from("test-id")
+            }));
+            let options = StartOptions::default()
+                .child_of(parent.clone())
+                .follows(parent);
+            let (span, _) = TestContext::new(options);
+            match span.references().get(0) {
+                Some(&SpanReference::ChildOf(_)) => (),
+                Some(_) => panic!("Invalid span reference"),
+                None => panic!("Missing span reference")
+            }
+            match span.references().get(1) {
+                Some(&SpanReference::FollowsFrom(_)) => (),
+                Some(_) => panic!("Invalid span reference"),
+                None => panic!("Missing span reference")
+            }
+        }
+    }
 
     mod times {
         use std::time::Duration;

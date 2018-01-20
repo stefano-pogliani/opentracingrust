@@ -97,7 +97,7 @@ impl TracerInterface for FileTracer {
         }
     }
 
-    fn span(&self, name: &str, options: &StartOptions) -> Span {
+    fn span(&self, name: &str, options: StartOptions) -> Span {
         let trace_id = random::<u64>();
         let span_id = random::<u64>();
         let context = SpanContext::new(ImplWrapper::new(FileTracerContext {

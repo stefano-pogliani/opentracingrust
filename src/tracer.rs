@@ -10,6 +10,10 @@ use super::SpanContext;
 use super::StartOptions;
 
 
+// TODO: figure out a global tracer instance so that libraries don't have to
+//       implement wierd workarounds to pass the tracer around.
+
+
 /// TODO
 pub trait TracerInterface {
     /// TODO
@@ -30,7 +34,7 @@ pub struct Tracer {
 
 impl Tracer {
     /// TODO
-    pub fn new<T: 'static + TracerInterface>(tracer: T) -> Tracer {
+    pub fn new<T: TracerInterface + 'static>(tracer: T) -> Tracer {
         Tracer {
             tracer: Box::new(tracer)
         }

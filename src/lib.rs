@@ -1,4 +1,133 @@
-//! TODO
+//! An [OpenTracing](http://opentracing.io/) implementation for rust.
+//!
+//! This crate provides a generic Tracer interface following the OpenTracing
+//! specification that allows users (libraries, framework, applications) to
+//! implement distributed tracing across ecosystems and without commiting to
+//! a specific distributed tracer.
+//!
+//! This means that:
+//!
+//!   * Frameworks don't have to impose a tracer on applications.
+//!   * Libraries can integrate their user's traces.
+//!   * Applications lock end-users into a distributed tracer.
+//!
+//!
+//! # Architecture
+//!
+//! At the core of this library are three types:
+//!
+//!   * `Tracer`: an interface to create and serialise `Span`s.
+//!   * `Span`: each instance represents an operation and its metadata.
+//!   * `SpanContext`: a trecer-specific identifier of a `Span`.
+//!
+//!
+//! ## Configuraing a `Tracer`
+//! 
+//! <b>
+//!     Application implementers MUST read this, library and framework
+//!     implementers SHOULD still read it for completeness.
+//! </b>
+//!
+//! Every application and all the libraires and frameworks it uses
+//! share a single `Tracer` instance, unique to the entire process.
+//! The instance should be passed around using a dependency injection
+//! technique, of which there are many.
+//! This crate provides a `GlobalTracer` utility signleton for cases
+//! where dependency injections are not usable.
+//!
+//! Configuration of the `Tracer` instance used across the process is the
+//! responsibility of the application and should be performed as soon as
+//! possible in the initialisation phase.
+//!
+//! Tracers are implemented in separate crates and each tracers can be
+//! implemented as desired but there are two requirements of concrete tracers:
+//!
+//!   * Initialisation returns instance of `Tracer`.
+//!   * A `std::sync::mpsc::channel` is used by the tracer to send
+//!     `FinishedSpan`s to a reporting thread.
+//!
+//! The reporting thread is responsible for pushing the spans to the
+//! distributed tracer of choice.
+//!
+//! In code:
+//!
+//! ```
+//! extern crate opentracingrust;
+//!
+//! use opentracingrust::tracers::NullTracer;
+//! use opentracingrust::utils::GlobalTracer;
+//! use opentracingrust::utils::ReporterThread;
+//!
+//!
+//! fn main() {
+//!     let (tracer, receiver) = NullTracer::new();
+//!     let reporter = ReporterThread::new(receiver, NullTracer::report);
+//!     GlobalTracer::init(tracer);
+//!     reporter.start();
+//!
+//!     // ... snip ..,
+//! }
+//! ```
+//!
+//!
+//! ## Tracing an operation
+//!
+//! Now that a `Tracer` is configured and we are sending `FinishedSpan`s to a
+//! distributed tracing software, it is possible to trace operations.
+//!
+//! Tracing operations is done by:
+//!
+//!   * Creating a named `Span` that represents the operation.
+//!   * Attaching causality information with `SpanContext`s.
+//!   * Adding any needed metadata.
+//!   * Finishing the span once the operation is done.
+//!
+//! ```
+//! extern crate opentracingrust;
+//!
+//! use opentracingrust::tracers::NullTracer;
+//! use opentracingrust::utils::GlobalTracer;
+//! use opentracingrust::utils::ReporterThread;
+//!
+//!
+//! fn main() {
+//!     let (tracer, receiver) = NullTracer::new();
+//!     let reporter = ReporterThread::new(receiver, NullTracer::report);
+//!     GlobalTracer::init(tracer);
+//!     reporter.start();
+//!     // Once the tracer is configured we can start working.
+//!     start_working();
+//! }
+//!
+//! fn start_working() {
+//!     let tracer = GlobalTracer::get();
+//!     let mut root_span = tracer.span("start_working", StartOptions::default());
+//!     // The actual work is done in a sub-operation.
+//!     do_work(root_span.context().clone());
+//!     root_span.finish();
+//! }
+//!
+//! fn do_work(context: SpanContext) {
+//!     let tracer = GlobalTracer::get();
+//!     let mut span = tracer.span(
+//!         "do_work", StartOptions::default().child_of(context)
+//!     );
+//!     // ... do work ...
+//!     span.finish();
+//! }
+//! ```
+//!
+//! The `examples/` directoy includes many more working
+//! end-to-end examples of different use cases.
+//!
+//!
+//! ## The `NullTracer`
+//!
+//! As mentioned above, the crate does not provide concrete `Tracer`s
+//! but rather a standard interface for projects to bind against.
+//!
+//! The `NullTracer` is the perfect tool to write tests with and a good default
+//! for examples and projects that do not yet implement full tracing support.
 extern crate rand;
 
 mod carrier;

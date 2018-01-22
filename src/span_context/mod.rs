@@ -28,7 +28,7 @@ pub struct SpanContext {
 
 impl SpanContext {
     /// TODO
-    pub fn new<Context: 'static + ImplContext>(inner: Context) -> SpanContext {
+    pub fn new<Context: ImplContext + 'static>(inner: Context) -> SpanContext {
         SpanContext {
             inner: Box::new(inner),
             baggage: vec![]

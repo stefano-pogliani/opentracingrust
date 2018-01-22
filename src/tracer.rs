@@ -1,8 +1,5 @@
-use std::io;
-
 use super::ExtractFormat;
 use super::InjectFormat;
-use super::MapCarrier;
 
 use super::Result;
 use super::Span;
@@ -10,12 +7,8 @@ use super::SpanContext;
 use super::StartOptions;
 
 
-// TODO: figure out a global tracer instance so that libraries don't have to
-//       implement wierd workarounds to pass the tracer around.
-
-
 /// TODO
-pub trait TracerInterface {
+pub trait TracerInterface : Send {
     /// TODO
     fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>>;
 
@@ -48,52 +41,10 @@ impl Tracer {
     }
 
     /// TODO
-    pub fn extract_binary<Carrier: self::io::Read>(
-        &self, carrier: &mut Carrier
-    ) -> Result<Option<SpanContext>> {
-        self.extract(ExtractFormat::Binary(Box::new(carrier)))
-    }
-
-    /// TODO
-    pub fn extract_http_headers<Carrier: MapCarrier>(
-        &self, carrier: &Carrier
-    ) -> Result<Option<SpanContext>> {
-        self.extract(ExtractFormat::HttpHeaders(Box::new(carrier)))
-    }
-
-    /// TODO
-    pub fn extract_textmap<Carrier: MapCarrier>(
-        &self, carrier: &Carrier
-    ) -> Result<Option<SpanContext>> {
-        self.extract(ExtractFormat::TextMap(Box::new(carrier)))
-    }
-
-    /// TODO
     pub fn inject(
         &self, context: &SpanContext, fmt: InjectFormat
     ) -> Result<()> {
         self.tracer.inject(context, fmt)
-    }
-
-    /// TODO
-    pub fn inject_binary<Carrier: self::io::Write>(
-        &self, context: &SpanContext, carrier: &mut Carrier
-    ) -> Result<()> {
-        self.inject(context, InjectFormat::Binary(Box::new(carrier)))
-    }
-
-    /// TODO
-    pub fn inject_http_headers<Carrier: MapCarrier>(
-        &self, context: &SpanContext, carrier: &mut Carrier
-    ) -> Result<()> {
-        self.inject(context, InjectFormat::HttpHeaders(Box::new(carrier)))
-    }
-
-    /// TODO
-    pub fn inject_textmap<Carrier: MapCarrier>(
-        &self, context: &SpanContext, carrier: &mut Carrier
-    ) -> Result<()> {
-        self.inject(context, InjectFormat::TextMap(Box::new(carrier)))
     }
 
     /// TODO
@@ -253,7 +204,9 @@ mod tests {
         let mut buffer = io::Cursor::new("test-span\na:b\n");
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let context = tracer.extract_binary(&mut buffer).unwrap().unwrap();
+        let context = tracer.extract(
+            ExtractFormat::Binary(Box::new(&mut buffer))
+        ).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
         assert_eq!("test-span", inner.name);
         assert_eq!(context.baggage_items(), [BaggageItem::new("a", "b")]);
@@ -266,7 +219,7 @@ mod tests {
         map.insert(String::from("Baggage-a"), String::from("b"));
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let context = tracer.extract_http_headers(&map).unwrap().unwrap();
+        let context = tracer.extract(ExtractFormat::HttpHeaders(Box::new(&map))).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
         assert_eq!("2", inner.name);
         assert_eq!(context.baggage_items(), [BaggageItem::new("a", "b")]);
@@ -279,7 +232,7 @@ mod tests {
         map.insert(String::from("baggage-a"), String::from("b"));
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let context = tracer.extract_textmap(&map).unwrap().unwrap();
+        let context = tracer.extract(ExtractFormat::TextMap(Box::new(&map))).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
         assert_eq!("2", inner.name);
         assert_eq!(context.baggage_items(), [BaggageItem::new("a", "b")]);
@@ -293,7 +246,7 @@ mod tests {
         span.set_baggage_item("a", "b");
 
         let mut buffer: Vec<u8> = Vec::new();
-        tracer.inject_binary(span.context(), &mut buffer).unwrap();
+        tracer.inject(span.context(), InjectFormat::Binary(Box::new(&mut buffer))).unwrap();
         assert_eq!(
             String::from_utf8(buffer).unwrap(),
             "TraceId: 123\nSpan Name: test-span\nBaggage-a: b\n"
@@ -308,7 +261,7 @@ mod tests {
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();
-        tracer.inject_http_headers(span.context(), &mut map).unwrap();
+        tracer.inject(span.context(), InjectFormat::HttpHeaders(Box::new(&mut map))).unwrap();
 
         let mut items: Vec<(String, String)> = map.iter()
             .map(|(k, v)| (k.clone(), v.clone()))
@@ -329,7 +282,7 @@ mod tests {
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();
-        tracer.inject_textmap(span.context(), &mut map).unwrap();
+        tracer.inject(span.context(), InjectFormat::TextMap(Box::new(&mut map))).unwrap();
 
         let mut items: Vec<(String, String)> = map.iter()
             .map(|(k, v)| (k.clone(), v.clone()))

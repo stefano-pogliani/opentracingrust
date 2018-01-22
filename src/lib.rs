@@ -85,6 +85,9 @@
 //! ```
 //! extern crate opentracingrust;
 //!
+//! use opentracingrust::SpanContext;
+//! use opentracingrust::StartOptions;
+//!
 //! use opentracingrust::tracers::NullTracer;
 //! use opentracingrust::utils::GlobalTracer;
 //! use opentracingrust::utils::ReporterThread;
@@ -137,6 +140,7 @@ mod span_context;
 mod tracer;
 
 pub mod tracers;
+pub mod utils;
 
 
 pub use self::carrier::ExtractFormat;

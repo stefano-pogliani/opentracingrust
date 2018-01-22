@@ -31,6 +31,7 @@ use std::time;
 use opentracingrust::SpanContext;
 use opentracingrust::StartOptions;
 use opentracingrust::Tracer;
+use opentracingrust::utils::GlobalTracer;
 
 // Tracer specific imports.
 use opentracingrust::tracers::FileTracer;
@@ -43,7 +44,7 @@ fn main() {
     // To do so we instantiate a tracer implementation and wrap it inside a Tracer.
     // A tracer implementation is any struct that implements the `TracerInterface` trait.
     let (tracer, receiver) = FileTracer::new();
-    let tracer = Tracer::new(tracer);
+    let tracer = GlobalTracer::init(Tracer::new(tracer));
 
     // Then we create a thread that will receive finished spans and write them to stderr.
     let looping = Arc::new(AtomicBool::new(true));
@@ -73,7 +74,7 @@ fn main() {
     writer.join().unwrap();
 }
 
-fn fibonacci(n: u64, tracer: &Tracer, parent: SpanContext) -> u64 {
+fn fibonacci(n: u64, tracer: &Arc<Tracer>, parent: SpanContext) -> u64 {
     // To create a new span for this operation set the parent span.
     let options = StartOptions::default().child_of(parent);
     if n <= 2 {

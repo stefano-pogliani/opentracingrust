@@ -10,6 +10,7 @@ Features
 - Auto finishing spans: spans can finish themselves when dropped.
 - Documentation.
 - FileTracer prints durations.
+- GlobalTracer signleton.
 - Pass span initial references.
 - Pass span start time.
 - Span stores finish time.

@@ -44,7 +44,7 @@ fn main() {
     // To do so we instantiate a tracer implementation and wrap it inside a Tracer.
     // A tracer implementation is any struct that implements the `TracerInterface` trait.
     let (tracer, receiver) = FileTracer::new();
-    let tracer = GlobalTracer::init(Tracer::new(tracer));
+    let tracer = GlobalTracer::init(tracer);
 
     // Then we create a thread that will receive finished spans and write them to stderr.
     let looping = Arc::new(AtomicBool::new(true));

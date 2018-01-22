@@ -5,10 +5,10 @@ use std::sync::mpsc;
 use rand::random;
 
 use super::super::BaggageItem;
-use super::super::FinishedSpan;
 use super::super::ImplWrapper;
 use super::super::Result;
 
+use super::super::FinishedSpan;
 use super::super::Span;
 use super::super::SpanContext;
 use super::super::SpanReceiver;
@@ -19,6 +19,7 @@ use super::super::StartOptions;
 
 use super::super::ExtractFormat;
 use super::super::InjectFormat;
+use super::super::Tracer;
 use super::super::TracerInterface;
 
 
@@ -110,10 +111,10 @@ impl TracerInterface for FileTracer {
 
 impl FileTracer {
     /// TODO
-    pub fn new() -> (FileTracer, SpanReceiver) {
+    pub fn new() -> (Tracer, SpanReceiver) {
         let (sender, receiver) = mpsc::channel();
         let tracer = FileTracer { sender };
-        (tracer, receiver)
+        (Tracer::new(tracer), receiver)
     }
 
     /// TODO
@@ -206,9 +207,7 @@ mod tests {
     }
 
     fn make_tracer() -> (Tracer, SpanReceiver) {
-        let (tracer, receiver) = FileTracer::new();
-        let tracer = Tracer::new(tracer);
-        (tracer, receiver)
+        FileTracer::new()
     }
 
 

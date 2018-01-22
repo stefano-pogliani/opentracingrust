@@ -4,6 +4,7 @@ Version 0.2.0 (Unreleased)
 Breaking Changes
 ----------------
 - Extend `Tracer::span` with `StartOptions`.
+- `FileTracer::new` returns a `Tracer` and not a `FileTracer`.
 
 Features
 --------
@@ -11,6 +12,7 @@ Features
 - Documentation.
 - FileTracer prints durations.
 - GlobalTracer signleton.
+- NullTracer implementation.
 - Pass span initial references.
 - Pass span start time.
 - Span stores finish time.

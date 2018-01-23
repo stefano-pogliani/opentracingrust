@@ -5,7 +5,6 @@ use super::Error;
 use super::Result;
 
 use super::SpanContext;
-use super::span_context::BaggageItem;
 
 
 /// TODO
@@ -142,7 +141,7 @@ impl Span {
     }
 
     /// TODO
-    pub fn get_baggage_item(&self, key: &str) -> Option<&BaggageItem> {
+    pub fn get_baggage_item(&self, key: &str) -> Option<&String> {
         self.context.get_baggage_item(key)
     }
 
@@ -153,7 +152,7 @@ impl Span {
 
     /// TODO
     pub fn set_baggage_item(&mut self, key: &str, value: &str) {
-        self.context.set_baggage_item(BaggageItem::new(key, value));
+        self.context.set_baggage_item(String::from(key), String::from(value));
     }
 }
 
@@ -164,8 +163,8 @@ impl Span {
         match reference {
             SpanReference::ChildOf(ref parent) |
             SpanReference::FollowsFrom(ref parent) => {
-                for item in parent.baggage_items() {
-                    self.context.set_baggage_item(item.clone())
+                for (key, value) in parent.baggage_items() {
+                    self.context.set_baggage_item(key.clone(), value.clone())
                 }
             }
         }
@@ -238,7 +237,6 @@ mod tests {
     use super::super::SpanContext;
     use super::super::SpanReferenceAware;
     use super::super::StartOptions;
-    use super::super::span_context::BaggageItem;
 
     use super::FinishedSpan;
     use super::Span;
@@ -302,7 +300,7 @@ mod tests {
         let mut context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-2")
         }));
-        context.set_baggage_item(BaggageItem::new("a", "b"));
+        context.set_baggage_item(String::from("a"), String::from("b"));
         span.child_of(context.clone());
         match span.references().get(0).unwrap() {
             &SpanReference::ChildOf(ref context) => {
@@ -312,7 +310,7 @@ mod tests {
             _ => panic!("Invalid span reference")
         }
         let item = span.get_baggage_item("a").unwrap();
-        assert_eq!(item.value(), "b");
+        assert_eq!(item, "b");
     }
 
     #[test]
@@ -326,7 +324,7 @@ mod tests {
         let mut context = SpanContext::new(ImplWrapper::new(TestContext {
             id: String::from("test-id-2")
         }));
-        context.set_baggage_item(BaggageItem::new("a", "b"));
+        context.set_baggage_item(String::from("a"), String::from("b"));
         span.follows(context.clone());
         match span.references().get(0).unwrap() {
             &SpanReference::FollowsFrom(ref context) => {
@@ -336,7 +334,7 @@ mod tests {
             _ => panic!("Invalid span reference")
         }
         let item = span.get_baggage_item("a").unwrap();
-        assert_eq!(item.value(), "b");
+        assert_eq!(item, "b");
     }
 
     mod references {

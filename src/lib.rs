@@ -150,7 +150,6 @@ pub use self::carrier::MapCarrier;
 pub use self::errors::Error;
 pub use self::errors::Result;
 
-pub use self::span_context::BaggageItem;
 pub use self::span_context::ImplContext;
 pub use self::span_context::ImplWrapper;
 pub use self::span_context::SpanContext;

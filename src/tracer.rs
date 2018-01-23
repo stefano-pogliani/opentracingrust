@@ -73,7 +73,6 @@ mod tests {
     use super::super::SpanReferenceAware;
     use super::super::SpanSender;
     use super::super::StartOptions;
-    use super::super::span_context::BaggageItem;
 
     use super::Tracer;
     use super::TracerInterface;
@@ -104,7 +103,7 @@ mod tests {
                     for line in reader.lines() {
                         let line = line?;
                         let cells: Vec<&str> = line.split(':').collect();
-                        context.set_baggage_item(BaggageItem::new(cells[0], cells[1]));
+                        context.set_baggage_item(String::from(cells[0]), String::from(cells[1]));
                     }
                     Ok(Some(context))
                 }
@@ -117,9 +116,7 @@ mod tests {
                         |k| k.starts_with("Baggage-")
                     ));
                     for (key, value) in items {
-                        context.set_baggage_item(
-                            BaggageItem::new(&key[8..], value)
-                        );
+                        context.set_baggage_item(String::from(&key[8..]), value);
                     }
                     Ok(Some(context))
                 }
@@ -132,9 +129,7 @@ mod tests {
                         |k| k.starts_with("baggage-")
                     ));
                     for (key, value) in items {
-                        context.set_baggage_item(
-                            BaggageItem::new(&key[8..], value)
-                        );
+                        context.set_baggage_item(String::from(&key[8..]), value);
                     }
                     Ok(Some(context))
                 }
@@ -151,10 +146,8 @@ mod tests {
                     carrier.write_fmt(
                         format_args!("Span Name: {}\n", &inner.name)
                     )?;
-                    for item in context.baggage_items() {
-                        carrier.write_fmt(format_args!(
-                            "Baggage-{}: {}\n", item.key(), item.value()
-                        ))?;
+                    for (key, value) in context.baggage_items() {
+                        carrier.write_fmt(format_args!("Baggage-{}: {}\n", key, value))?;
                     }
                     Ok(())
                 }
@@ -163,9 +156,9 @@ mod tests {
                     let inner = context.impl_context::<TestContext>().unwrap();
                     carrier.set("Trace-Id", "123");
                     carrier.set("Span-Name", &inner.name);
-                    for item in context.baggage_items() {
-                        let key = format!("Baggage-{}", item.key());
-                        carrier.set(&key, item.value());
+                    for (key, value) in context.baggage_items() {
+                        let key = format!("Baggage-{}", key);
+                        carrier.set(&key, value);
                     }
                     Ok(())
                 }
@@ -174,9 +167,9 @@ mod tests {
                     let inner = context.impl_context::<TestContext>().unwrap();
                     carrier.set("trace-id", "123");
                     carrier.set("span-name", &inner.name);
-                    for item in context.baggage_items() {
-                        let key = format!("baggage-{}", item.key());
-                        carrier.set(&key, item.value());
+                    for (key, value) in context.baggage_items() {
+                        let key = format!("baggage-{}", key);
+                        carrier.set(&key, value);
                     }
                     Ok(())
                 }
@@ -209,7 +202,10 @@ mod tests {
         ).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
         assert_eq!("test-span", inner.name);
-        assert_eq!(context.baggage_items(), [BaggageItem::new("a", "b")]);
+        let items: Vec<(String, String)> = context.baggage_items()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        assert_eq!(items, vec![(String::from("a"), String::from("b"))]);
     }
 
     #[test]
@@ -222,7 +218,10 @@ mod tests {
         let context = tracer.extract(ExtractFormat::HttpHeaders(Box::new(&map))).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
         assert_eq!("2", inner.name);
-        assert_eq!(context.baggage_items(), [BaggageItem::new("a", "b")]);
+        let items: Vec<(String, String)> = context.baggage_items()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        assert_eq!(items, vec![(String::from("a"), String::from("b"))]);
     }
 
     #[test]
@@ -235,7 +234,10 @@ mod tests {
         let context = tracer.extract(ExtractFormat::TextMap(Box::new(&map))).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
         assert_eq!("2", inner.name);
-        assert_eq!(context.baggage_items(), [BaggageItem::new("a", "b")]);
+        let items: Vec<(String, String)> = context.baggage_items()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        assert_eq!(items, vec![(String::from("a"), String::from("b"))]);
     }
 
     #[test]

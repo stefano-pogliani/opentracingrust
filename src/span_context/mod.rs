@@ -1,11 +1,11 @@
 use std::any::Any;
 use std::boxed::Box;
+use std::collections::HashMap;
+use std::collections::hash_map::Iter;
 use std::fmt;
 
-mod baggage;
 mod impl_context;
 
-pub use self::baggage::BaggageItem;
 pub use self::impl_context::ImplContext;
 pub use self::impl_context::ImplWrapper;
 pub use self::impl_context::SpanReferenceAware;
@@ -23,7 +23,7 @@ use super::SpanReference;
 ///   wrapper for implementation specific code.
 pub struct SpanContext {
     inner: Box<ImplContext>,
-    baggage: Vec<BaggageItem>
+    baggage: HashMap<String, String>
 }
 
 impl SpanContext {
@@ -31,7 +31,7 @@ impl SpanContext {
     pub fn new<Context: ImplContext + 'static>(inner: Context) -> SpanContext {
         SpanContext {
             inner: Box::new(inner),
-            baggage: vec![]
+            baggage: HashMap::new()
         }
     }
 }
@@ -61,13 +61,13 @@ impl SpanContext {
     }
 
     /// TODO
-    pub fn baggage_items(&self) -> &[BaggageItem] {
-        &self.baggage
+    pub fn baggage_items(&self) -> Iter<String, String> {
+        self.baggage.iter()
     }
 
     /// TODO
-    pub fn get_baggage_item(&self, key: &str) -> Option<&BaggageItem> {
-        self.baggage.iter().find(|x| x.key() == key)
+    pub fn get_baggage_item(&self, key: &str) -> Option<&String> {
+        self.baggage.get(key)
     }
 
     /// TODO
@@ -76,9 +76,8 @@ impl SpanContext {
     }
 
     /// TODO
-    pub fn set_baggage_item(&mut self, item: BaggageItem) {
-        self.baggage.retain(|x| x.key() != item.key());
-        self.baggage.push(item);
+    pub fn set_baggage_item(&mut self, key: String, value: String) {
+        self.baggage.insert(key, value);
     }
 }
 
@@ -88,7 +87,6 @@ mod tests {
     use super::super::SpanReference;
     use super::impl_context::SpanReferenceAware;
 
-    use super::BaggageItem;
     use super::ImplWrapper;
     use super::SpanContext;
 
@@ -109,7 +107,7 @@ mod tests {
             context.clone()
         };
         let format = format!("{:?}", clone);
-        assert_eq!(format, "SpanContext { inner: Box<ImplContext>, baggage: [] }");
+        assert_eq!(format, "SpanContext { inner: Box<ImplContext>, baggage: {} }");
     }
 
     #[test]
@@ -117,11 +115,11 @@ mod tests {
         let mut context = SpanContext::new(
             ImplWrapper::new(TestContext{id: "A".to_owned()})
         );
-        context.set_baggage_item(BaggageItem::new("key", "value"));
+        context.set_baggage_item(String::from("key"), String::from("value"));
         let format = format!("{:?}", context);
         assert_eq!(
             format,
-            r#"SpanContext { inner: Box<ImplContext>, baggage: [BaggageItem { key: "key", value: "value" }] }"#
+            r#"SpanContext { inner: Box<ImplContext>, baggage: {"key": "value"} }"#
         );
     }
 
@@ -139,9 +137,11 @@ mod tests {
     fn set_baggage_item() {
         let inner = ImplWrapper::new(TestContext{id: "some-id".to_owned()});
         let mut context = SpanContext::new(inner);
-        context.set_baggage_item(BaggageItem::new("key", "value"));
-        let baggage = context.baggage_items();
-        let expected = vec![BaggageItem::new("key", "value")];
-        assert_eq!(baggage, &expected[..]);
+        context.set_baggage_item(String::from("key"), String::from("value"));
+        let baggage: Vec<(String, String)> = context.baggage_items()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        let expected = vec![(String::from("key"), String::from("value"))];
+        assert_eq!(baggage, expected);
     }
 }

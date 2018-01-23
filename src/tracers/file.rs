@@ -4,7 +4,6 @@ use std::sync::mpsc;
 
 use rand::random;
 
-use super::super::BaggageItem;
 use super::super::ImplWrapper;
 use super::super::Result;
 
@@ -66,7 +65,7 @@ impl TracerInterface for FileTracer {
                     |k| k.starts_with(BAGGAGE_KEY_PREFIX)
                 ));
                 for (key, value) in items {
-                    context.set_baggage_item(BaggageItem::new(key, value));
+                    context.set_baggage_item(key, value);
                 }
                 Ok(Some(context))
             },
@@ -88,9 +87,9 @@ impl TracerInterface for FileTracer {
             InjectFormat::TextMap(carrier) => {
                 carrier.set(TRACE_ID_KEY, &context.trace_id.to_string());
                 carrier.set(SPAN_ID_KEY, &context.span_id.to_string());
-                for item in span_context.baggage_items() {
-                    let key = format!("{}{}", BAGGAGE_KEY_PREFIX, item.key());
-                    carrier.set(&key, item.value());
+                for (key, value) in span_context.baggage_items() {
+                    let key = format!("{}{}", BAGGAGE_KEY_PREFIX, key);
+                    carrier.set(&key, value);
                 }
                 Ok(())
             },
@@ -157,8 +156,8 @@ impl FileTracer {
         buffer.push_str("===> ]\n");
 
         buffer.push_str("===> Baggage items: [\n");
-        for item in span.context().baggage_items() {
-            buffer.push_str(&format!("===>   * {}: {}\n", item.key(), item.value()));
+        for (key, value) in span.context().baggage_items() {
+            buffer.push_str(&format!("===>   * {}: {}\n", key, value));
         }
         buffer.push_str("===> ]\n");
         file.write_all(buffer.as_bytes())
@@ -332,11 +331,11 @@ mod tests {
                 assert_eq!(5678, inner.span_id);
                 assert_eq!(
                     "ab",
-                    context.get_baggage_item("Baggage-Item1").unwrap().value()
+                    context.get_baggage_item("Baggage-Item1").unwrap()
                 );
                 assert_eq!(
                     "cd",
-                    context.get_baggage_item("Baggage-Item2").unwrap().value()
+                    context.get_baggage_item("Baggage-Item2").unwrap()
                 );
             }
         }
@@ -346,7 +345,6 @@ mod tests {
             use std::collections::HashMap;
             use std::io;
 
-            use super::super::super::super::super::span_context::BaggageItem;
             use super::super::super::super::super::InjectFormat;
             use super::make_context;
             use super::make_tracer;
@@ -369,8 +367,8 @@ mod tests {
                 let (tracer, _) = make_tracer();
                 let mut context = make_context(1234, 5678);
                 let mut map: HashMap<String, String> = HashMap::new();
-                context.set_baggage_item(BaggageItem::new("Item1", "ab"));
-                context.set_baggage_item(BaggageItem::new("Item2", "cd"));
+                context.set_baggage_item(String::from("Item1"), String::from("ab"));
+                context.set_baggage_item(String::from("Item2"), String::from("cd"));
                 tracer.inject(
                     &context,
                     InjectFormat::HttpHeaders(Box::new(&mut map))
@@ -387,8 +385,8 @@ mod tests {
                 let (tracer, _) = make_tracer();
                 let mut context = make_context(1234, 5678);
                 let mut map: HashMap<String, String> = HashMap::new();
-                context.set_baggage_item(BaggageItem::new("Item1", "ab"));
-                context.set_baggage_item(BaggageItem::new("Item2", "cd"));
+                context.set_baggage_item(String::from("Item1"), String::from("ab"));
+                context.set_baggage_item(String::from("Item2"), String::from("cd"));
                 tracer.inject(
                     &context,
                     InjectFormat::TextMap(Box::new(&mut map))

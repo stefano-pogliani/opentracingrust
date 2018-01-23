@@ -27,11 +27,11 @@ pub struct NullTracer {
 }
 
 impl TracerInterface for NullTracer {
-    fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>> {
+    fn extract(&self, _fmt: ExtractFormat) -> Result<Option<SpanContext>> {
         Err(Error::Msg(String::from("TODO")))
     }
 
-    fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()> {
+    fn inject(&self, _context: &SpanContext, _fmt: InjectFormat) -> Result<()> {
         Err(Error::Msg(String::from("TODO")))
     }
 
@@ -56,7 +56,7 @@ impl NullTracer {
 
 
     /// TODO
-    pub fn report(span: FinishedSpan) {
+    pub fn report(_span: FinishedSpan) {
         // TODO
     }
 }

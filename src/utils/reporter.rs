@@ -7,7 +7,7 @@ pub struct ReporterThread {}
 
 impl ReporterThread {
     /// TODO
-    pub fn new<Reporter>(receiver: SpanReceiver, reporter: Reporter) -> ReporterThread
+    pub fn new<Reporter>(_receiver: SpanReceiver, _reporter: Reporter) -> ReporterThread
         where Reporter: Fn(FinishedSpan) -> ()
     {
         // TODO

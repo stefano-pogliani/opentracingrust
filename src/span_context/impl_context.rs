@@ -5,16 +5,88 @@ use std::marker::Send;
 use super::super::SpanReference;
 
 
-/// TODO
+/// Tracer implementation's context details.
+///
+/// An OpenTracing `SpanContext` is an abstraction that holds:
+///
+///   * Baggage items: key-value pairs that are propagated though the trace.
+///   * Tracer specific details: such as the trace and span ids, flags, and other
+///     information that are needed by the concrete tracer (Zipkin, Jaeger, ...).
+///
+/// OpenTracingRust splits this abstraction into two:
+///
+///   * The `SpanContext` struct: holding all the common data.
+///   * The `ImplContext` trait: holding implementation details.
+///
+/// Implementations of `ImplContext` are only used by implementations of the
+/// `TracerInterface` and are carried around by the `SpanContext`.
+///
+/// # Examples
+///
+/// ```
+/// extern crate opentracingrust;
+///
+/// use std::any::Any;
+/// use opentracingrust::ImplContext;
+/// use opentracingrust::SpanContext;
+/// use opentracingrust::SpanReference;
+///
+///
+/// pub struct SomeTracerContext {
+///     span_id: u64,
+///     trace_id: u64,
+/// }
+///
+/// impl ImplContext for SomeTracerContext {
+///     fn impl_context(&self) -> &Any {
+///         self
+///     }
+///
+///     fn clone(&self) -> Box<ImplContext> {
+///         Box::new(SomeTracerContext {
+///             span_id: self.span_id,
+///             trace_id: self.trace_id,
+///         })
+///     }
+///
+///     fn reference_span(&mut self, reference: &SpanReference) {
+///         match *reference {
+///             SpanReference::ChildOf(ref parent) |
+///             SpanReference::FollowsFrom(ref parent) => {
+///                 let context = parent.impl_context::<SomeTracerContext>().unwrap();
+///                 self.trace_id = context.trace_id;
+///             }
+///         }
+///     }
+/// }
+///
+/// fn main() {
+///     // ... snip ...
+///
+///     let span_context = SpanContext::new(SomeTracerContext {
+///         span_id: 21,
+///         trace_id: 42,
+///     });
+///
+///     // ... snip ...
+/// }
+/// ```
 pub trait ImplContext : Send {
-    /// TODO
+    /// Allow runtime downcasting with the `Any` interface.
+    ///
+    /// `SpanContext`s store implementations `ImplContext`s using `Box`es.  
+    /// This method is used by the `SpanContext::impl_context` generic method
+    /// to downcast the boxed `ImplContext` using the `std::any::Any` interface.
     fn impl_context(&self) -> &Any;
 
-    /// TODO
+    /// Clones an `ImplContext` trait object into a new `ImplContext` trait object.
     fn clone(&self) -> Box<ImplContext>;
 
-    /// TODO
-    fn reference_span(&mut self, _reference: &SpanReference);
+    /// Allows the `ImplContext` to add references.
+    ///
+    /// When a reference is added to a `SpanContext` this method will be called
+    /// so that the tracer's `ImplContext` can update its internal references.
+    fn reference_span(&mut self, reference: &SpanReference);
 }
 
 
@@ -49,8 +121,8 @@ impl<T: Any + Clone + Send + SpanReferenceAware> ImplContext for ImplWrapper<T> 
 
 /// TODO
 pub trait SpanReferenceAware {
-    /// TODO
-    fn reference_span(&mut self, _reference: &SpanReference);
+    /// See `ImplContext::reference_span`
+    fn reference_span(&mut self, reference: &SpanReference);
 }
 
 

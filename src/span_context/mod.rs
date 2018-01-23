@@ -22,8 +22,8 @@ use super::SpanReference;
 ///   The `ImplContext` uses the `std::any::Any` features to define a generic
 ///   wrapper for implementation specific code.
 pub struct SpanContext {
+    baggage: HashMap<String, String>,
     inner: Box<ImplContext>,
-    baggage: HashMap<String, String>
 }
 
 impl SpanContext {

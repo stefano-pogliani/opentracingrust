@@ -156,7 +156,9 @@ impl<T: Any + Clone + Send + SpanReferenceAware> ImplContext for ImplContextBox<
 }
 
 
-/// TODO
+/// Trait for structs that want to be wrapped in `ImplContextBox`s.
+///
+/// See `ImplContext` for more information.
 pub trait SpanReferenceAware {
     /// See `ImplContext::reference_span`
     fn reference_span(&mut self, reference: &SpanReference);

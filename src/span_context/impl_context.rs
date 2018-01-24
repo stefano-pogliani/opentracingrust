@@ -18,8 +18,9 @@ use super::super::SpanReference;
 ///   * The `SpanContext` struct: holding all the common data.
 ///   * The `ImplContext` trait: holding implementation details.
 ///
-/// Implementations of `ImplContext` are only used by implementations of the
+/// Implementations of `ImplContext` are only used by implementors of the
 /// `TracerInterface` and are carried around by the `SpanContext`.
+/// They contain span and trace identifiers and `Tracer` specific metadata.
 ///
 /// # Examples
 ///

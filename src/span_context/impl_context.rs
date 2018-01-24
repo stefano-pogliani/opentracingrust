@@ -90,25 +90,62 @@ pub trait ImplContext : Send {
 }
 
 
-/// TODO
-pub struct ImplWrapper<T: Any + Clone + Send> {
+/// Utility struct to create `ImplContext`s.
+///
+/// Generic structure that creates a wrapper around structs to make them
+/// compatible with `ImplContext` trait objects.
+///
+/// The wrapped struct requires the following traits to be implemented:
+///
+///   * `Any`
+///   * `Clone`
+///   * `Send`
+///   * `SpanReferenceAware`
+///
+/// # Examples
+///
+/// ```
+/// extern crate opentracingrust;
+///
+/// use opentracingrust::ImplContext;
+/// use opentracingrust::ImplContextBox;
+/// use opentracingrust::SpanReference;
+/// use opentracingrust::SpanReferenceAware;
+///
+/// #[derive(Clone)]
+/// struct Context {
+///     // ... snip ...
+/// }
+///
+/// impl SpanReferenceAware for Context {
+///     fn reference_span(&mut self, reference: &SpanReference) {
+///         // ... snip ...
+///     }
+/// }
+///
+/// fn main() {
+///     let context: Box<ImplContext> = Box::new(ImplContextBox::new(Context{}));
+///     // ... snip ...
+/// }
+/// ```
+pub struct ImplContextBox<T: Any + Clone + Send + SpanReferenceAware> {
     inner: T
 }
 
-impl<T: Any + Clone + Send> ImplWrapper<T> {
-    /// TODO
-    pub fn new(inner: T) -> ImplWrapper<T> {
-        ImplWrapper { inner }
+impl<T: Any + Clone + Send + SpanReferenceAware> ImplContextBox<T> {
+    /// Wrap a compatible value into a `ImplContextBox`.
+    pub fn new(inner: T) -> ImplContextBox<T> {
+        ImplContextBox { inner }
     }
 }
 
-impl<T: Any + Clone + Send + SpanReferenceAware> ImplContext for ImplWrapper<T> {
+impl<T: Any + Clone + Send + SpanReferenceAware> ImplContext for ImplContextBox<T> {
     fn impl_context(&self) -> &Any {
         &self.inner
     }
 
     fn clone(&self) -> Box<ImplContext> {
-        Box::new(ImplWrapper {
+        Box::new(ImplContextBox {
             inner: self.inner.clone()
         })
     }
@@ -130,7 +167,7 @@ pub trait SpanReferenceAware {
 mod tests {
     use super::super::super::SpanReference;
     use super::ImplContext;
-    use super::ImplWrapper;
+    use super::ImplContextBox;
     use super::SpanReferenceAware;
 
     #[derive(Debug, Clone)]
@@ -144,7 +181,7 @@ mod tests {
     #[test]
     fn clone_context() {
         let clone = {
-            let context = ImplWrapper::new(TestContext {
+            let context = ImplContextBox::new(TestContext {
                 id: "ABC".to_owned()
             });
             context.clone()
@@ -159,7 +196,7 @@ mod tests {
 
     #[test]
     fn unwrap_context() {
-        let context = ImplWrapper::new(TestContext { id: "ABC".to_owned() });
+        let context = ImplContextBox::new(TestContext { id: "ABC".to_owned() });
         let inner = context.impl_context();
         if let Some(inner) = inner.downcast_ref::<TestContext>() {
             assert_eq!(inner.id, "ABC");

@@ -4,7 +4,7 @@ use std::sync::mpsc;
 
 use rand::random;
 
-use super::super::ImplWrapper;
+use super::super::ImplContextBox;
 use super::super::Result;
 
 use super::super::FinishedSpan;
@@ -53,7 +53,7 @@ impl TracerInterface for FileTracer {
                 let span_id = span_id.unwrap().parse::<u64>()?;
 
                 // Create a mutable context to load baggage items.
-                let mut context = SpanContext::new(ImplWrapper::new(
+                let mut context = SpanContext::new(ImplContextBox::new(
                     FileTracerContext {
                         trace_id,
                         span_id
@@ -100,7 +100,7 @@ impl TracerInterface for FileTracer {
     fn span(&self, name: &str, options: StartOptions) -> Span {
         let trace_id = random::<u64>();
         let span_id = random::<u64>();
-        let context = SpanContext::new(ImplWrapper::new(FileTracerContext {
+        let context = SpanContext::new(ImplContextBox::new(FileTracerContext {
             trace_id,
             span_id
         }));
@@ -190,7 +190,7 @@ impl SpanReferenceAware for FileTracerContext {
 
 #[cfg(test)]
 mod tests {
-    use super::super::super::ImplWrapper;
+    use super::super::super::ImplContextBox;
     use super::super::super::SpanContext;
     use super::super::super::SpanReceiver;
     use super::super::super::Tracer;
@@ -199,7 +199,7 @@ mod tests {
     use super::FileTracerContext;
 
     fn make_context(trace_id: u64, span_id: u64) -> SpanContext {
-        SpanContext::new(ImplWrapper::new(FileTracerContext {
+        SpanContext::new(ImplContextBox::new(FileTracerContext {
             trace_id,
             span_id
         }))

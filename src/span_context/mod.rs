@@ -7,7 +7,7 @@ use std::fmt;
 mod impl_context;
 
 pub use self::impl_context::ImplContext;
-pub use self::impl_context::ImplWrapper;
+pub use self::impl_context::ImplContextBox;
 pub use self::impl_context::SpanReferenceAware;
 
 use super::SpanReference;
@@ -87,7 +87,7 @@ mod tests {
     use super::super::SpanReference;
     use super::impl_context::SpanReferenceAware;
 
-    use super::ImplWrapper;
+    use super::ImplContextBox;
     use super::SpanContext;
 
 
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn clone_span_context() {
         let clone = {
-            let inner = ImplWrapper::new(TestContext{id: "A".to_owned()});
+            let inner = ImplContextBox::new(TestContext{id: "A".to_owned()});
             let context = SpanContext::new(inner);
             context.clone()
         };
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn debug_formatting() {
         let mut context = SpanContext::new(
-            ImplWrapper::new(TestContext{id: "A".to_owned()})
+            ImplContextBox::new(TestContext{id: "A".to_owned()})
         );
         context.set_baggage_item(String::from("key"), String::from("value"));
         let format = format!("{:?}", context);
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn extract_implementation_context() {
-        let inner = ImplWrapper::new(TestContext{id: "some-id".to_owned()});
+        let inner = ImplContextBox::new(TestContext{id: "some-id".to_owned()});
         let context = SpanContext::new(inner);
         match context.impl_context::<TestContext>() {
             Some(ctx) => assert_eq!(ctx.id, "some-id"),
@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn set_baggage_item() {
-        let inner = ImplWrapper::new(TestContext{id: "some-id".to_owned()});
+        let inner = ImplContextBox::new(TestContext{id: "some-id".to_owned()});
         let mut context = SpanContext::new(inner);
         context.set_baggage_item(String::from("key"), String::from("value"));
         let baggage: Vec<(String, String)> = context.baggage_items()

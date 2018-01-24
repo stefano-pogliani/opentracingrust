@@ -3,7 +3,7 @@ use std::sync::mpsc;
 use rand::random;
 
 use super::super::Error;
-use super::super::ImplWrapper;
+use super::super::ImplContextBox;
 use super::super::Result;
 
 use super::super::FinishedSpan;
@@ -38,7 +38,7 @@ impl TracerInterface for NullTracer {
     fn span(&self, name: &str, options: StartOptions) -> Span {
         let trace_id = random::<u64>();
         let span_id = random::<u64>();
-        let context = SpanContext::new(ImplWrapper::new(NullTracerContext {
+        let context = SpanContext::new(ImplContextBox::new(NullTracerContext {
             trace_id,
             span_id
         }));

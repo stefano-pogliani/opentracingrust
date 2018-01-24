@@ -151,7 +151,7 @@ pub use self::errors::Error;
 pub use self::errors::Result;
 
 pub use self::span_context::ImplContext;
-pub use self::span_context::ImplWrapper;
+pub use self::span_context::ImplContextBox;
 pub use self::span_context::SpanContext;
 pub use self::span_context::SpanReferenceAware;
 

@@ -233,7 +233,7 @@ mod tests {
     use std::sync::mpsc;
     use std::time::Duration;
 
-    use super::super::ImplWrapper;
+    use super::super::ImplContextBox;
     use super::super::SpanContext;
     use super::super::SpanReferenceAware;
     use super::super::StartOptions;
@@ -251,7 +251,7 @@ mod tests {
     impl TestContext {
         fn new(options: StartOptions) -> (Span, SpanReceiver) {
             let (sender, receiver) = mpsc::channel();
-            let context = SpanContext::new(ImplWrapper::new(TestContext {
+            let context = SpanContext::new(ImplContextBox::new(TestContext {
                 id: String::from("test-id")
             }));
             (Span::new("test-span", context, options, sender), receiver)
@@ -280,7 +280,7 @@ mod tests {
     #[test]
     fn send_span_on_finish() {
         let (sender, receiver) = mpsc::channel();
-        let context = SpanContext::new(ImplWrapper::new(TestContext {
+        let context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id")
         }));
         let options = StartOptions::default();
@@ -292,12 +292,12 @@ mod tests {
     #[test]
     fn span_child_of_another() {
         let (sender, _) = mpsc::channel();
-        let context = SpanContext::new(ImplWrapper::new(TestContext {
+        let context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id-1")
         }));
         let options = StartOptions::default();
         let mut span = Span::new("test-span", context, options, sender);
-        let mut context = SpanContext::new(ImplWrapper::new(TestContext {
+        let mut context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id-2")
         }));
         context.set_baggage_item(String::from("a"), String::from("b"));
@@ -316,12 +316,12 @@ mod tests {
     #[test]
     fn span_follows_another() {
         let (sender, _) = mpsc::channel();
-        let context = SpanContext::new(ImplWrapper::new(TestContext {
+        let context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id-1")
         }));
         let options = StartOptions::default();
         let mut span = Span::new("test-span", context, options, sender);
-        let mut context = SpanContext::new(ImplWrapper::new(TestContext {
+        let mut context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id-2")
         }));
         context.set_baggage_item(String::from("a"), String::from("b"));
@@ -338,7 +338,7 @@ mod tests {
     }
 
     mod references {
-        use super::super::super::ImplWrapper;
+        use super::super::super::ImplContextBox;
 
         use super::super::SpanContext;
         use super::super::SpanReference;
@@ -349,7 +349,7 @@ mod tests {
 
         #[test]
         fn child_of() {
-            let parent = SpanContext::new(ImplWrapper::new(TestContext {
+            let parent = SpanContext::new(ImplContextBox::new(TestContext {
                 id: String::from("test-id")
             }));
             let options = StartOptions::default()
@@ -364,7 +364,7 @@ mod tests {
 
         #[test]
         fn follows() {
-            let parent = SpanContext::new(ImplWrapper::new(TestContext {
+            let parent = SpanContext::new(ImplContextBox::new(TestContext {
                 id: String::from("test-id")
             }));
             let options = StartOptions::default()
@@ -379,7 +379,7 @@ mod tests {
 
         #[test]
         fn multi_refs() {
-            let parent = SpanContext::new(ImplWrapper::new(TestContext {
+            let parent = SpanContext::new(ImplContextBox::new(TestContext {
                 id: String::from("test-id")
             }));
             let options = StartOptions::default()

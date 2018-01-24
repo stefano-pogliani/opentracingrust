@@ -65,7 +65,7 @@ mod tests {
     use super::super::ExtractFormat;
     use super::super::InjectFormat;
 
-    use super::super::ImplWrapper;
+    use super::super::ImplContextBox;
     use super::super::Result;
     use super::super::Span;
     use super::super::SpanContext;
@@ -97,7 +97,7 @@ mod tests {
                     let mut name = String::new();
                     reader.read_line(&mut name)?;
 
-                    let mut context = SpanContext::new(ImplWrapper::new(
+                    let mut context = SpanContext::new(ImplContextBox::new(
                         TestContext { name: name.trim().to_owned() }
                     ));
                     for line in reader.lines() {
@@ -109,7 +109,7 @@ mod tests {
                 }
 
                 ExtractFormat::HttpHeaders(carrier) => {
-                    let mut context = SpanContext::new(ImplWrapper::new(
+                    let mut context = SpanContext::new(ImplContextBox::new(
                         TestContext { name: carrier.get("Span-Name").unwrap() }
                     ));
                     let items = carrier.find_items(Box::new(
@@ -122,7 +122,7 @@ mod tests {
                 }
 
                 ExtractFormat::TextMap(carrier) => {
-                    let mut context = SpanContext::new(ImplWrapper::new(
+                    let mut context = SpanContext::new(ImplContextBox::new(
                         TestContext { name: carrier.get("span-name").unwrap() }
                     ));
                     let items = carrier.find_items(Box::new(
@@ -177,7 +177,7 @@ mod tests {
         }
 
         fn span(&self, name: &str, options: StartOptions) -> Span {
-            let context = SpanContext::new(ImplWrapper::new(TestContext {
+            let context = SpanContext::new(ImplContextBox::new(TestContext {
                 name: String::from("test-span")
             }));
             Span::new(name, context, options, self.sender.clone())

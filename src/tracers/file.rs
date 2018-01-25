@@ -27,7 +27,39 @@ const SPAN_ID_KEY: &str = "SpanID";
 const TRACE_ID_KEY: &str = "TraceID";
 
 
-/// TODO
+/// A tracer that writes spans to an `std::io::Write`.
+///
+/// Useful for local testing, experiments, tests.
+/// **NOT suited for production use!**
+///
+/// Intended to write spans to stderr but can also be used to write spans to stdout or files.
+///
+/// # Examples
+///
+/// ```
+/// extern crate opentracingrust;
+///
+/// use std::io;
+///
+/// use opentracingrust::FinishedSpan;
+/// use opentracingrust::tracers::FileTracer;
+/// use opentracingrust::utils::GlobalTracer;
+/// use opentracingrust::utils::ReporterThread;
+///
+///
+/// fn main() {
+///     let (tracer, receiver) = FileTracer::new();
+///     let tracer = GlobalTracer::init(tracer);
+///
+///     let mut stderr = io::stderr();
+///     let reporter = ReporterThread::new(receiver, |span: FinishedSpan| {
+///         FileTracer::write_trace(span, &mut stderr).unwrap();
+///     });
+///     reporter.start();
+///
+///     // ... snip ...
+/// }
+/// ```
 pub struct FileTracer {
     sender: SpanSender
 }
@@ -109,14 +141,16 @@ impl TracerInterface for FileTracer {
 }
 
 impl FileTracer {
-    /// TODO
+    /// Instantiate a new file tracer.
     pub fn new() -> (Tracer, SpanReceiver) {
         let (sender, receiver) = mpsc::channel();
         let tracer = FileTracer { sender };
         (Tracer::new(tracer), receiver)
     }
 
-    /// TODO
+    /// Function to write the a `FinishedSpan` to a stream.
+    ///
+    /// Used to send `FinishedSpan`s to an `std::io::Write` stream.
     pub fn write_trace<W: Write>(
         span: FinishedSpan, file: &mut W
     ) -> io::Result<()> {
@@ -165,7 +199,7 @@ impl FileTracer {
 }
 
 
-/// TODO
+/// Inner `SpanContext` for `FileTracer`.
 #[derive(Clone, Debug)]
 struct FileTracerContext {
     trace_id: u64,

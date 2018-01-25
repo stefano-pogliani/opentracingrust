@@ -93,11 +93,10 @@ impl TracerInterface for FileTracer {
                 ));
 
                 // Decode baggage items.
-                let items = carrier.find_items(Box::new(
-                    |k| k.starts_with(BAGGAGE_KEY_PREFIX)
-                ));
-                for (key, value) in items {
-                    context.set_baggage_item(key, value);
+                for (key, value) in carrier.items() {
+                    if key.starts_with(BAGGAGE_KEY_PREFIX) {
+                        context.set_baggage_item(key.clone(), value.clone());
+                    }
                 }
                 Ok(Some(context))
             },

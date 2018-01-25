@@ -3,7 +3,29 @@ use std::collections::HashMap;
 use std::io;
 
 
-/// TODO
+/// `SpanContext` extraction format and source.
+///
+/// Each supported extraction format also carries an object trait to
+/// the data carrier the `SpanContext` should be extracted from.
+///
+/// # Examples
+///
+/// ```
+/// extern crate opentracingrust;
+///
+/// use std::collections::HashMap;
+/// use opentracingrust::ExtractFormat;
+///
+///
+/// fn main() {
+///     let mut headers: HashMap<String, String> = HashMap::new();
+///     headers.insert(String::from("TraceId"), String::from("123"));
+///     headers.insert(String::from("SpanId"), String::from("456"));
+///
+///     let format = ExtractFormat::HttpHeaders(Box::new(&headers)); 
+///     // ... snip ...
+/// }
+/// ```
 pub enum ExtractFormat<'a> {
     Binary(Box<&'a mut self::io::Read>),
     HttpHeaders(Box<&'a MapCarrier>),
@@ -11,7 +33,26 @@ pub enum ExtractFormat<'a> {
 }
 
 
-/// TODO
+/// `SpanContext` injection format and destination.
+///
+/// Each supported injection format also carries an object trait to
+/// the data carrier the `SpanContext` should be injected into.
+///
+/// # Examples
+///
+/// ```
+/// extern crate opentracingrust;
+///
+/// use std::collections::HashMap;
+/// use opentracingrust::InjectFormat;
+///
+///
+/// fn main() {
+///     let mut headers: HashMap<String, String> = HashMap::new();
+///     let format = InjectFormat::HttpHeaders(Box::new(&mut headers)); 
+///     // ... snip ...
+/// }
+/// ```
 pub enum InjectFormat<'a> {
     Binary(Box<&'a mut self::io::Write>),
     HttpHeaders(Box<&'a mut MapCarrier>),
@@ -19,33 +60,27 @@ pub enum InjectFormat<'a> {
 }
 
 
-/// TODO
+/// Interface for HTTP header and text map carriers.
+///
+/// A trait used by `InjectFormat` and `ExtractFormat` to store carriers that
+/// support the `HttpHeaders` and the `TextMap` formats.
 pub trait MapCarrier {
-    /// TODO
+    /// List all items stored in the carrier as `(key, value)` pairs.
     ///
-    /// NOTE:
-    ///   This is not the most efficient interface to extract baggage items.
-    ///   The iterator interface cannot cleanly be used because we want
-    ///   `TextMapCarrier` trait objects (which do not allow generics).
-    ///
-    ///   If a better interface comes up re-evaluate this method.
-    ///
-    /// TODO: Can I Box<Iterator<Item=(&str, &str)>> return type?
-    fn find_items(&self, f: Box<Fn(&String) -> bool>) -> Vec<(String, String)>;
+    /// Intended to be used by the `ExtractFormat`s to extract all the
+    /// baggage items from the carrier.
+    fn items(&self) -> Vec<(&String, &String)>;
 
-    /// TODO
+    /// Attempt to fetch an exact key from the carrier.
     fn get(&self, key: &str) -> Option<String>;
 
-    /// TODO
+    /// Set a key/value pair on the carrier.
     fn set(&mut self, key: &str, value: &str);
 }
 
 impl MapCarrier for HashMap<String, String> {
-    fn find_items(&self, f: Box<Fn(&String) -> bool>) -> Vec<(String, String)> {
-        self.iter()
-            .filter(|&(k, _)| f(k))
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()
+    fn items(&self) -> Vec<(&String, &String)> {
+        self.iter().collect()
     }
 
     fn get(&self, key: &str) -> Option<String> {
@@ -58,11 +93,8 @@ impl MapCarrier for HashMap<String, String> {
 }
 
 impl MapCarrier for BTreeMap<String, String> {
-    fn find_items(&self, f: Box<Fn(&String) -> bool>) -> Vec<(String, String)> {
-        self.iter()
-            .filter(|&(k, _)| f(k))
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()
+    fn items(&self) -> Vec<(&String, &String)> {
+        self.iter().collect()
     }
 
     fn get(&self, key: &str) -> Option<String> {
@@ -95,7 +127,12 @@ mod tests {
             tree.insert(String::from("ab"), String::from("e"));
             tree.insert(String::from("bc"), String::from("f"));
 
-            let mut items = tree.find_items(Box::new(|k| k.starts_with("a")));
+            let mut items = vec![];
+            for (key, value) in tree.items() {
+                if key.starts_with("a") {
+                    items.push((key.clone(), value.clone()));
+                }
+            }
             items.sort();
             assert_eq!(items, [
                 (String::from("aa"), String::from("d")),
@@ -133,7 +170,12 @@ mod tests {
             map.insert(String::from("ab"), String::from("e"));
             map.insert(String::from("bc"), String::from("f"));
 
-            let mut items = map.find_items(Box::new(|k| k.starts_with("a")));
+            let mut items = vec![];
+            for (key, value) in map.items() {
+                if key.starts_with("a") {
+                    items.push((key.clone(), value.clone()));
+                }
+            }
             items.sort();
             assert_eq!(items, [
                 (String::from("aa"), String::from("d")),

@@ -26,6 +26,8 @@ static mut GLOBAL_TRACER: Option<Arc<Tracer>> = None;
 /// The use of a static global variable that returns read-only references
 /// allows the `Tracer` to be accessed easily and cheaply.
 ///
+/// # Examples
+///
 /// ```
 /// extern crate opentracingrust;
 ///
@@ -83,7 +85,7 @@ impl GlobalTracer {
         }
     }
 
-    /// TODO
+    /// Allow tests to clean up before they run.
     #[cfg(test)]
     fn reset() {
         unsafe {

@@ -112,11 +112,10 @@ mod tests {
                     let mut context = SpanContext::new(ImplContextBox::new(
                         TestContext { name: carrier.get("Span-Name").unwrap() }
                     ));
-                    let items = carrier.find_items(Box::new(
-                        |k| k.starts_with("Baggage-")
-                    ));
-                    for (key, value) in items {
-                        context.set_baggage_item(String::from(&key[8..]), value);
+                    for (key, value) in carrier.items() {
+                        if key.starts_with("Baggage-") {
+                            context.set_baggage_item(String::from(&key[8..]), value.clone());
+                        }
                     }
                     Ok(Some(context))
                 }
@@ -125,11 +124,10 @@ mod tests {
                     let mut context = SpanContext::new(ImplContextBox::new(
                         TestContext { name: carrier.get("span-name").unwrap() }
                     ));
-                    let items = carrier.find_items(Box::new(
-                        |k| k.starts_with("baggage-")
-                    ));
-                    for (key, value) in items {
-                        context.set_baggage_item(String::from(&key[8..]), value);
+                    for (key, value) in carrier.items() {
+                        if key.starts_with("baggage-") {
+                            context.set_baggage_item(String::from(&key[8..]), value.clone());
+                        }
                     }
                     Ok(Some(context))
                 }

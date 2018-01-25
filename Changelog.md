@@ -6,6 +6,7 @@ Breaking Changes
 - Extend `Tracer::span` with `StartOptions`.
 - `FileTracer::new` returns a `Tracer` and not a `FileTracer`.
 - Rename `ImplWrapper` to `ImplContextBox`.
+- Replace `MapCarrier::find_items` with `MapCarrier::items`.
 
 Features
 --------

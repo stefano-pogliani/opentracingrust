@@ -6,7 +6,7 @@ use std::sync::mpsc;
 use super::span::FinishedSpan;
 
 
-/// TODO
+/// Enumeration of all errors returned by opentracingrust.
 #[derive(Debug)]
 pub enum Error {
     IoError(self::io::Error),
@@ -27,6 +27,12 @@ impl From<self::num::ParseIntError> for Error {
     }
 }
 
+impl From<self::mpsc::SendError<FinishedSpan>> for Error {
+    fn from(error: self::mpsc::SendError<FinishedSpan>) -> Self {
+        Error::SendError(error)
+    }
+}
 
-/// TODO
+
+/// Type alias for `Result`s that can fail with an opentracingrust `Error`.
 pub type Result<T> = self::result::Result<T, Error>;

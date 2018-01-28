@@ -9,7 +9,7 @@ use super::StartOptions;
 
 /// Smallest set of operations that a concrete tracer must implement.
 ///
-/// While opentracingrust users develop against the `Tracer` structure,
+/// While OpenTracingRust users develop against the `Tracer` structure,
 /// the logic of a tracer is implemented through this trait.
 ///
 /// `Tracer` is therefore a wrapper around `TracerInterface` trait objects

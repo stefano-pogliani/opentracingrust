@@ -126,7 +126,7 @@ impl fmt::Debug for SpanContext {
 impl SpanContext {
     /// Attempt to access the `SpanContext`'s tracer details.
     ///
-    /// This method is for use by `TracerInterface` implementors to extract
+    /// This method is for use by `TracerInterface` developers to extract
     /// the tracer-specific span context for inject and referencing operations.
     ///
     /// Since only one `Tracer` implementation should be used throughout the

@@ -130,8 +130,8 @@ mod tests {
 
     // *** SEQUENTIAL TESTS ***
     // The following tests cannot run in parallel as they (unsafely)
-    // manipulate the GLOBAL_TRACER signleton.
-    // To avoid forcing all tests to be run serailly these tests
+    // manipulate the GLOBAL_TRACER singleton.
+    // To avoid forcing all tests to be run serially these tests
     // sleep for increasing 5 ms increments.
 
     #[test]

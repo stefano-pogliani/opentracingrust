@@ -2,7 +2,7 @@
 //!
 //! This crate provides a generic Tracer interface following the OpenTracing
 //! specification that allows users (libraries, framework, applications) to
-//! implement distributed tracing across ecosystems and without commiting to
+//! implement distributed tracing across ecosystems and without committing to
 //! a specific distributed tracer.
 //!
 //! This means that:
@@ -18,7 +18,7 @@
 //!
 //!   * `Tracer`: an interface to create and serialise `Span`s.
 //!   * `Span`: each instance represents an operation and its metadata.
-//!   * `SpanContext`: a trecer-specific identifier of a `Span`.
+//!   * `SpanContext`: a tracer-specific identifier of a `Span`.
 //!
 //!
 //! ## Configuraing a `Tracer`
@@ -28,11 +28,11 @@
 //!     developers SHOULD still read it for completeness.
 //! </b>
 //!
-//! Every application and all the libraires and frameworks it uses
+//! Every application and all the libraries and frameworks it uses
 //! share a single `Tracer` instance, unique to the entire process.
 //! The instance should be passed around using a dependency injection
 //! technique, of which there are many.
-//! This crate provides a `GlobalTracer` utility signleton for cases
+//! This crate provides a `GlobalTracer` utility singleton for cases
 //! where dependency injections are not usable.
 //!
 //! Configuration of the `Tracer` instance used across the process is the

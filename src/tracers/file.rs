@@ -147,7 +147,7 @@ impl FileTracer {
         (Tracer::new(tracer), receiver)
     }
 
-    /// Function to write the a `FinishedSpan` to a stream.
+    /// Function to write a `FinishedSpan` to a stream.
     ///
     /// Used to send `FinishedSpan`s to an `std::io::Write` stream.
     pub fn write_trace<W: Write>(

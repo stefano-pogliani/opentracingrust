@@ -15,10 +15,10 @@ use super::super::SpanReference;
 ///
 /// OpenTracingRust splits this abstraction into two:
 ///
-///   * The `SpanContext` struct: holding all the common data.
+///   * The `SpanContext` structure: holding all the common data.
 ///   * The `ImplContext` trait: holding implementation details.
 ///
-/// Implementations of `ImplContext` are only used by implementors of the
+/// Implementations of `ImplContext` are only used by implementations of the
 /// `TracerInterface` and are carried around by the `SpanContext`.
 /// They contain span and trace identifiers and `Tracer` specific metadata.
 ///
@@ -91,12 +91,12 @@ pub trait ImplContext : Send {
 }
 
 
-/// Utility struct to create `ImplContext`s.
+/// Utility structure to create `ImplContext`s.
 ///
-/// Generic structure that creates a wrapper around structs to make them
+/// Generic structure that creates a wrapper around structures to make them
 /// compatible with `ImplContext` trait objects.
 ///
-/// The wrapped struct requires the following traits to be implemented:
+/// The wrapped structure requires the following traits to be implemented:
 ///
 ///   * `Any`
 ///   * `Clone`
@@ -157,7 +157,7 @@ impl<T: Any + Clone + Send + SpanReferenceAware> ImplContext for ImplContextBox<
 }
 
 
-/// Trait for structs that want to be wrapped in `ImplContextBox`s.
+/// Trait for structures that want to be wrapped in `ImplContextBox`s.
 ///
 /// See `ImplContext` for more information.
 pub trait SpanReferenceAware {

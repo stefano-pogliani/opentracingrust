@@ -11,6 +11,7 @@ Breaking Changes
 Features
 --------
 - Auto finishing spans: spans can finish themselves when dropped.
+- Custom tracer example.
 - Documentation.
 - FileTracer prints durations.
 - GlobalTracer signleton.

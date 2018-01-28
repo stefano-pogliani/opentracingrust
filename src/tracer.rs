@@ -7,26 +7,58 @@ use super::SpanContext;
 use super::StartOptions;
 
 
-/// TODO
+/// Smallest set of operations that a concrete tracer must implement.
+///
+/// While opentracingrust users develop against the `Tracer` structure,
+/// the logic of a tracer is implemented through this trait.
+///
+/// `Tracer` is therefore a wrapper around `TracerInterface` trait objects
+/// and provides some helper methods that are useful for all tracers.
+///
+/// # Implementing tracers
+///
+/// OpenTracingRust aims to minimise the amount of work to implement tracers.
+/// This is achieved by `Box`ing traits into structures that are passed around my clients.
+///
+/// The following elements must be provided by tracer implementations:
+///
+///   * An inner context that implements `ImplContext` to store a tracer specific span id.
+///   * An inner tracer that implements `TracerInterface` to inject/extract/create spans.
+///   * A function that sends `FinishedSpan`s to the distributed tracer.
+///
+/// How these elements are implemented and what they do is up to the tracer implementation with one
+/// exception: `FinishedSpan`s are sent over an `mpsc::channel` so `ImplContext` has to be `Send`.
+///
+/// # Examples
+///
+/// If you are looking to implement your tracer checkout the following first:
+///
+///   * The `FileTracer` implementation that is part of OpenTracingRust.
+///   * Example `1-custom-tracer.rs`, which implements an in-memory tracer.
 pub trait TracerInterface : Send {
-    /// TODO
+    /// Attempt to extract a SpanContext from a carrier.
     fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>>;
 
-    /// TODO
+    /// Inject tracing information into a carrier.
     fn inject(&self, context: &SpanContext, fmt: InjectFormat) -> Result<()>;
 
-    /// TODO
+    /// Create a new `Span` with the given operation name and starting options.
     fn span(&self, name: &str, options: StartOptions) -> Span;
 }
 
 
-/// TODO
+/// The library users interface to tracing.
+///
+/// This structure is the focus point for clients to use in combination with `SpanContext`.
+/// The configured tracer is stored in this structure and backs the available methods.
+///
+/// The `Tracer` structure also provides some utility methods to make common operations easier.
 pub struct Tracer {
     tracer: Box<TracerInterface>
 }
 
 impl Tracer {
-    /// TODO
+    /// Creates a new `Tracer` for a concrete tracer.
     pub fn new<T: TracerInterface + 'static>(tracer: T) -> Tracer {
         Tracer {
             tracer: Box::new(tracer)
@@ -35,19 +67,27 @@ impl Tracer {
 }
 
 impl Tracer {
-    /// TODO
+    /// Attempt to extract a SpanContext from a carrier.
+    ///
+    /// If the carrier (i.e, HTTP Request, RPC Message, ...) includes tracing information
+    /// this method returns `Ok(Some(context))`, otherwise `Ok(None)` is returned.
+    ///
+    /// If the method fails to extract a context because the carrier fails or because
+    /// the tracing information is incorrectly formatted an `Error` is returned.
     pub fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>> {
         self.tracer.extract(fmt)
     }
 
-    /// TODO
+    /// Inject tracing information into a carrier.
+    ///
+    /// If the method fails to inject the context because the carrier fails.
     pub fn inject(
         &self, context: &SpanContext, fmt: InjectFormat
     ) -> Result<()> {
         self.tracer.inject(context, fmt)
     }
 
-    /// TODO
+    /// Create a new `Span` with the given operation name and starting options.
     pub fn span(&self, name: &str, options: StartOptions) -> Span {
         self.tracer.span(name, options)
     }

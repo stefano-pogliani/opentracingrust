@@ -24,8 +24,8 @@
 //! ## Configuraing a `Tracer`
 //! 
 //! <b>
-//!     Application implementers MUST read this, library and framework
-//!     implementers SHOULD still read it for completeness.
+//!     Application developers MUST read this, library and framework
+//!     developers SHOULD still read it for completeness.
 //! </b>
 //!
 //! Every application and all the libraires and frameworks it uses

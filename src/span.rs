@@ -256,11 +256,11 @@ pub type SpanSender = mpsc::Sender<FinishedSpan>;
 /// use std::time::SystemTime;
 ///
 /// use opentracingrust::StartOptions;
-/// use opentracingrust::tracers::NullTracer;
+/// use opentracingrust::tracers::NoopTracer;
 ///
 ///
 /// fn main() {
-///     let (tracer, _) = NullTracer::new();
+///     let (tracer, _) = NoopTracer::new();
 ///     let parent = tracer.span("parent");
 ///
 ///     let now = SystemTime::now();

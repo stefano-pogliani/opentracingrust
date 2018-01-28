@@ -15,7 +15,7 @@ Features
 - Documentation.
 - FileTracer prints durations.
 - GlobalTracer signleton.
-- NullTracer implementation.
+- NoopTracer implementation.
 - Pass span initial references.
 - Pass span start time.
 - Span stores finish time.

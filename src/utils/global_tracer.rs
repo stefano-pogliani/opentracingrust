@@ -31,12 +31,12 @@ static mut GLOBAL_TRACER: Option<Arc<Tracer>> = None;
 /// ```
 /// extern crate opentracingrust;
 ///
-/// use opentracingrust::tracers::NullTracer;
+/// use opentracingrust::tracers::NoopTracer;
 /// use opentracingrust::utils::GlobalTracer;
 ///
 ///
 /// fn main() {
-///    let (tracer, _) = NullTracer::new();
+///    let (tracer, _) = NoopTracer::new();
 ///    let tracer = GlobalTracer::init(tracer);
 /// }
 /// ```

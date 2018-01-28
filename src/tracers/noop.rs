@@ -22,11 +22,11 @@ use super::super::TracerInterface;
 
 
 /// TODO
-pub struct NullTracer {
+pub struct NoopTracer {
     sender: SpanSender
 }
 
-impl TracerInterface for NullTracer {
+impl TracerInterface for NoopTracer {
     fn extract(&self, _fmt: ExtractFormat) -> Result<Option<SpanContext>> {
         Err(Error::Msg(String::from("TODO")))
     }
@@ -38,7 +38,7 @@ impl TracerInterface for NullTracer {
     fn span(&self, name: &str, options: StartOptions) -> Span {
         let trace_id = random::<u64>();
         let span_id = random::<u64>();
-        let context = SpanContext::new(ImplContextBox::new(NullTracerContext {
+        let context = SpanContext::new(ImplContextBox::new(NoopTracerContext {
             trace_id,
             span_id
         }));
@@ -46,11 +46,11 @@ impl TracerInterface for NullTracer {
     }
 }
 
-impl NullTracer {
+impl NoopTracer {
     /// TODO
     pub fn new() -> (Tracer, SpanReceiver) {
         let (sender, receiver) = mpsc::channel();
-        let tracer = NullTracer { sender };
+        let tracer = NoopTracer { sender };
         (Tracer::new(tracer), receiver)
     }
 
@@ -63,19 +63,19 @@ impl NullTracer {
 
 /// TODO
 #[derive(Clone, Debug)]
-struct NullTracerContext {
+struct NoopTracerContext {
     trace_id: u64,
     span_id: u64
 }
 
-impl SpanReferenceAware for NullTracerContext {
+impl SpanReferenceAware for NoopTracerContext {
     fn reference_span(&mut self, reference: &SpanReference) {
         match reference {
             &SpanReference::ChildOf(ref parent) |
             &SpanReference::FollowsFrom(ref parent) => {
-                let context = parent.impl_context::<NullTracerContext>();
+                let context = parent.impl_context::<NoopTracerContext>();
                 let context = context.expect(
-                    "Unsupported span context, was it created by NullTracer?"
+                    "Unsupported span context, was it created by NoopTracer?"
                 );
                 self.trace_id = context.trace_id;
             }

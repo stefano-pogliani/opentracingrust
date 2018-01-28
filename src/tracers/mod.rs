@@ -1,5 +1,5 @@
 mod file;
-mod null;
+mod noop;
 
 pub use self::file::FileTracer;
-pub use self::null::NullTracer;
+pub use self::noop::NoopTracer;

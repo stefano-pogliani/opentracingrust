@@ -59,7 +59,7 @@ opentracingrust = "^0.3.0"
 
 For development and testing the core library provides two tracers:
 
-  * The `NullTracer` is a tracer that drops all received information.
+  * The `NoopTracer` is a tracer that drops all received information.
     This tracer is a useful default for unit tests and project bootstapping.
   * The `FileTracer` is a test only tracer that writes span information to
     a rust `Write` stream (usually stdout/stderr).

@@ -54,14 +54,14 @@
 //! ```
 //! extern crate opentracingrust;
 //!
-//! use opentracingrust::tracers::NullTracer;
+//! use opentracingrust::tracers::NoopTracer;
 //! use opentracingrust::utils::GlobalTracer;
 //! use opentracingrust::utils::ReporterThread;
 //!
 //!
 //! fn main() {
-//!     let (tracer, receiver) = NullTracer::new();
-//!     let reporter = ReporterThread::new(receiver, NullTracer::report);
+//!     let (tracer, receiver) = NoopTracer::new();
+//!     let reporter = ReporterThread::new(receiver, NoopTracer::report);
 //!     GlobalTracer::init(tracer);
 //!     reporter.start();
 //!
@@ -88,14 +88,14 @@
 //! use opentracingrust::SpanContext;
 //! use opentracingrust::StartOptions;
 //!
-//! use opentracingrust::tracers::NullTracer;
+//! use opentracingrust::tracers::NoopTracer;
 //! use opentracingrust::utils::GlobalTracer;
 //! use opentracingrust::utils::ReporterThread;
 //!
 //!
 //! fn main() {
-//!     let (tracer, receiver) = NullTracer::new();
-//!     let reporter = ReporterThread::new(receiver, NullTracer::report);
+//!     let (tracer, receiver) = NoopTracer::new();
+//!     let reporter = ReporterThread::new(receiver, NoopTracer::report);
 //!     GlobalTracer::init(tracer);
 //!     reporter.start();
 //!     // Once the tracer is configured we can start working.
@@ -124,12 +124,12 @@
 //! end-to-end examples of different use cases.
 //!
 //!
-//! ## The `NullTracer`
+//! ## The `NoopTracer`
 //!
 //! As mentioned above, the crate does not provide concrete `Tracer`s
 //! but rather a standard interface for projects to bind against.
 //!
-//! The `NullTracer` is the perfect tool to write tests with and a good default
+//! The `NoopTracer` is the perfect tool to write tests with and a good default
 //! for examples and projects that do not yet implement full tracing support.
 extern crate rand;
 

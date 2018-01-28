@@ -1,24 +1,33 @@
 use std::sync::mpsc;
 use std::time::SystemTime;
 
-use super::Error;
 use super::Result;
-
 use super::SpanContext;
 
 
-/// TODO
+/// A `Span` wrapper that finishes a span when dropped.
 ///
-/// Structure invariant: An AutoFinishingSpan *always* contains a `Span`.
-///   An AutoFinishingSpan is only created with a `Some(span)`.
-///   The `Drop::drop` method is the only method allowed to leave
-///   the AutoFinishingSpan with an inner `None`.
+/// # Panics
+///
+/// If the inner span fails to `Span::finish` correctly the `AutoFinishingSpan`
+/// will cause the current thread to panic when it is dropped.
+// Structure invariant: An AutoFinishingSpan *always* contains a `Span`.
+//   An AutoFinishingSpan is only created with a `Some(span)`.
+//   The `Drop::drop` method is the only method allowed to leave
+//   the AutoFinishingSpan with an inner `None`.
 #[derive(Clone, Debug)]
 pub struct AutoFinishingSpan(Option<Span>);
 
 impl AutoFinishingSpan {
     pub fn new(span: Span) -> AutoFinishingSpan {
         AutoFinishingSpan(Some(span))
+    }
+}
+
+impl AutoFinishingSpan {
+    /// Access the `SpanContext` for the inner `Span`.
+    pub fn context(&self) -> &SpanContext {
+        self.0.as_ref().unwrap().context()
     }
 }
 
@@ -31,7 +40,10 @@ impl Drop for AutoFinishingSpan {
 }
 
 
-/// TODO
+/// A `Span` that represents a finished operation.
+///
+/// The span can no longer be altered since the operation is finished.
+/// `Tracer`s must provide a way to submit `FinishedSpan`a to the distributed tracer.
 #[derive(Clone, Debug)]
 pub struct FinishedSpan {
     context: SpanContext,
@@ -42,34 +54,42 @@ pub struct FinishedSpan {
 }
 
 impl FinishedSpan {
-    /// TODO
+    /// Access the operation's `SpanContext`.
     pub fn context(&self) -> &SpanContext {
         &self.context
     }
 
-    /// TODO
+    /// Access the `SystemTime` the `Span` was finished.
     pub fn finish_time(&self) -> &SystemTime {
         &self.finish_time
     }
 
-    /// TODO
+    /// Access the name of the operation.
     pub fn name(&self) -> &String {
         &self.name
     }
 
-    /// TODO
+    /// Access all the `SpanContext`s and their relationship with this span.
     pub fn references(&self) -> &Vec<SpanReference> {
         &self.references
     }
 
-    /// TODO
+    /// Access the `SystemTime` the `Span` was started.
     pub fn start_time(&self) -> &SystemTime {
         &self.start_time
     }
 }
 
 
-/// TODO
+/// Model of an in progress operation.
+///
+/// A `Span` is to a distributed trace what a stack frame is to a stack trace.
+///
+/// `Span`s are created by `Tracer`s with `Tracer::span`.
+/// `Span`s can be populated with `StartOptions` passed to `Tracer::span` and
+/// with the mutating methods described below.
+///
+/// Once an operation is complete the span should be finished with `Span::finished`.
 #[derive(Clone, Debug)]
 pub struct Span {
     context: SpanContext,
@@ -81,7 +101,14 @@ pub struct Span {
 }
 
 impl Span {
-    /// TODO
+    /// Creates a new `Span` instance and initialises any passed `StartOptions`.
+    ///
+    /// This function is for use by `TracerInterface` implementations in their
+    /// `TracerInterface::span` method.
+    ///
+    /// The `sender` argument is the sending end of an `mpsc::channel`.
+    /// The receiving end of this channel, usually returned by the tracer's initialisation
+    /// routine, will gather `FinishedSpan`s so they can be shipped to the distributed tracer.
     pub fn new(
         name: &str, context: SpanContext, options: StartOptions,
         sender: SpanSender
@@ -102,27 +129,48 @@ impl Span {
 }
 
 impl Span {
-    /// TODO
+    /// Convert the running `Span` into an `AutoFinishingSpan`.
+    ///
+    /// `Span`s instances need to be `finished` for the information to be sent.
+    /// If a `Span` goes out of scope the information in it is lost and the span
+    /// is never sent to the distributed tracer.
+    ///
+    /// The `AutoFinishingSpan` wrapper allows a `Span` to be finished when it goes out of scope.
+    ///
+    /// # Panics
+    /// While this function never panics, keep in mind that the `AutoFinishingSpan`
+    /// panics if `Span::finish` fails.
     pub fn auto_finish(self) -> AutoFinishingSpan {
         AutoFinishingSpan::new(self)
     }
 
-    /// TODO
+    /// Marks this span as a child of the given context.
     pub fn child_of(&mut self, parent: SpanContext) {
         self.reference_span(SpanReference::ChildOf(parent));
     }
 
-    /// TODO
+    /// Access the `SpanContext` of this span.
     pub fn context(&self) -> &SpanContext {
         &self.context
     }
 
-    /// TODO
+    /// Set the span finish time.
+    /// 
+    /// This method allows to set the finish time of an operation explicitly
+    /// and still manipulate the span further.
+    /// This allows to time the operation first and the populate the span with
+    /// any available detail without obfuscating the duration of the real operation.
     pub fn finish_time(&mut self, finish_time: SystemTime) {
         self.finish_time = Some(finish_time);
     }
 
-    /// TODO
+    /// Finished a span and sends it to the tracer's receiver..
+    ///
+    /// Consumes a `Span` to create a `FinishedSpan`.
+    /// The finished span is then send to the tracer's `mpsc::Receiver` associated
+    /// with the span at the time of creation.
+    ///
+    /// Any error sending the span is returned to the caller.
     pub fn finish(self) -> Result<()> {
         let finished = FinishedSpan {
             context: self.context,
@@ -131,34 +179,24 @@ impl Span {
             references: self.references,
             start_time: self.start_time,
         };
-        self.sender.send(finished).map_err(|e| Error::SendError(e))?;
+        self.sender.send(finished)?;
         Ok(())
     }
 
-    /// TODO
+    /// Marks this span as a follower of the given context.
     pub fn follows(&mut self, parent: SpanContext) {
         self.reference_span(SpanReference::FollowsFrom(parent));
     }
 
-    /// TODO
+    /// Attempt to fetch a baggage item by key.
+    ///
+    /// If there is no item with the given key this method returns `None`.
     pub fn get_baggage_item(&self, key: &str) -> Option<&String> {
         self.context.get_baggage_item(key)
     }
 
-    /// TODO
-    pub fn references(&self) -> &[SpanReference] {
-        &self.references
-    }
-
-    /// TODO
-    pub fn set_baggage_item(&mut self, key: &str, value: &str) {
-        self.context.set_baggage_item(String::from(key), String::from(value));
-    }
-}
-
-impl Span {
-    /// TODO
-    fn reference_span(&mut self, reference: SpanReference) {
+    /// Adds a reference to a `SpanContext`.
+    pub fn reference_span(&mut self, reference: SpanReference) {
         self.context.reference_span(&reference);
         match reference {
             SpanReference::ChildOf(ref parent) |
@@ -170,10 +208,27 @@ impl Span {
         }
         self.references.push(reference);
     }
+
+    /// Access all referenced span contexts and their relationship.
+    pub fn references(&self) -> &[SpanReference] {
+        &self.references
+    }
+
+    /// Adds or updates the baggage items with the given key/value pair.
+    ///
+    /// Baggage items are forwarded to `Span`s that reference this `Span`
+    /// and all the `Span`s that reference them.
+    ///
+    /// Baggage items are **NOT** propagated backwards to `Span`s that reference this `Span`.
+    pub fn set_baggage_item(&mut self, key: &str, value: &str) {
+        self.context.set_baggage_item(String::from(key), String::from(value));
+    }
 }
 
 
-/// TODO
+/// Enumerates all known relationships among `SpanContext`s.
+///
+/// Each relationship also carries the `SpanContext` it relates to.
 #[derive(Clone, Debug)]
 pub enum SpanReference {
     ChildOf(SpanContext),
@@ -181,37 +236,63 @@ pub enum SpanReference {
 }
 
 
-/// TODO
+/// Type alias for an `mpsc::Receiver` of `FinishedSpan`s.
 pub type SpanReceiver = mpsc::Receiver<FinishedSpan>;
 
-/// TODO
+/// Type alias for an `mpsc::Sender` of `FinishedSpan`s.
 pub type SpanSender = mpsc::Sender<FinishedSpan>;
 
 
-/// TODO
+/// Additional options that are passed to `Tracer::span`.
+///
+/// These options specify initial attributes of a span.
+/// All values are optional.
+///
+/// # Examples
+///
+/// ```
+/// extern crate opentracingrust;
+///
+/// use std::time::SystemTime;
+///
+/// use opentracingrust::StartOptions;
+/// use opentracingrust::tracers::NullTracer;
+///
+///
+/// fn main() {
+///     let (tracer, _) = NullTracer::new();
+///     let parent = tracer.span("parent", StartOptions::default());
+///
+///     let now = SystemTime::now();
+///     let options = StartOptions::default()
+///         .child_of(parent.context().clone())
+///         .start_time(now);
+///     let span = tracer.span("test", options);
+/// }
+/// ```
 pub struct StartOptions {
     references: Vec<SpanReference>,
     start_time: Option<SystemTime>,
 }
 
 impl StartOptions {
-    /// TODO
+    /// Declares a `ChildOf` relationship for the `Span` to be.
     pub fn child_of(self, parent: SpanContext) -> Self {
         self.reference_span(SpanReference::ChildOf(parent))
     }
 
-    /// TODO
+    /// Declares a `FollowsFrom` relationship for the `Span` to be.
     pub fn follows(self, parent: SpanContext) -> Self {
         self.reference_span(SpanReference::FollowsFrom(parent))
     }
 
-    /// TODO
+    /// Declares any of the `SpanReference`s for the `Span` to be.
     pub fn reference_span(mut self, reference: SpanReference) -> Self {
         self.references.push(reference);
         self
     }
 
-    /// TODO
+    /// Sets the start time for the operation.
     pub fn start_time(mut self, start_time: SystemTime) -> Self {
         self.start_time = Some(start_time);
         self
@@ -219,6 +300,12 @@ impl StartOptions {
 }
 
 impl Default for StartOptions {
+    /// Returns a default set of `StartOptions`.
+    ///
+    /// By default the `Span` will:
+    ///
+    ///   * Have no references, which will make it a root span.
+    ///   * Have have a start time of when `Tracer::span` is called.
     fn default() -> StartOptions {
         StartOptions {
             references: Vec::new(),

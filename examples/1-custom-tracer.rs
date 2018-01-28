@@ -187,7 +187,7 @@ fn main() {
 
     // Do some work.
     {
-        let span = tracer.span("root", StartOptions::default());
+        let span = tracer.span("root");
         // ... snip ...
         span.finish().expect("Unable to finish span");
     }

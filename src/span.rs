@@ -261,13 +261,13 @@ pub type SpanSender = mpsc::Sender<FinishedSpan>;
 ///
 /// fn main() {
 ///     let (tracer, _) = NullTracer::new();
-///     let parent = tracer.span("parent", StartOptions::default());
+///     let parent = tracer.span("parent");
 ///
 ///     let now = SystemTime::now();
 ///     let options = StartOptions::default()
 ///         .child_of(parent.context().clone())
 ///         .start_time(now);
-///     let span = tracer.span("test", options);
+///     let span = tracer.span_with_options("test", options);
 /// }
 /// ```
 pub struct StartOptions {

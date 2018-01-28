@@ -244,8 +244,6 @@ mod tests {
 
 
     mod span {
-        use super::super::super::super::StartOptions;
-
         use super::super::FileTracer;
         use super::super::FileTracerContext;
         use super::make_context;
@@ -436,7 +434,7 @@ mod tests {
         #[test]
         fn create() {
             let (tracer, _) = make_tracer();
-            let span = tracer.span("test1", StartOptions::default());
+            let span = tracer.span("test1");
             let context = span.context().impl_context::<FileTracerContext>();
             context.unwrap();
         }
@@ -444,7 +442,7 @@ mod tests {
         #[test]
         fn write() {
             let (tracer, receiver) = make_tracer();
-            let mut span = tracer.span("test1", StartOptions::default());
+            let mut span = tracer.span("test1");
             span.child_of(make_context(123456, 123));
             span.follows(make_context(123456, 456));
             span.set_baggage_item("TestKey", "Test Value");

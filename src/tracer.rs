@@ -87,8 +87,13 @@ impl Tracer {
         self.tracer.inject(context, fmt)
     }
 
+    /// Create a new `Span` with the given operation name and default starting options.
+    pub fn span(&self, name: &str) -> Span {
+        self.span_with_options(name, StartOptions::default())
+    }
+
     /// Create a new `Span` with the given operation name and starting options.
-    pub fn span(&self, name: &str, options: StartOptions) -> Span {
+    pub fn span_with_options(&self, name: &str, options: StartOptions) -> Span {
         self.tracer.span(name, options)
     }
 }
@@ -227,7 +232,7 @@ mod tests {
     fn create_span() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let _span: Span = tracer.span("test-span", StartOptions::default());
+        let _span: Span = tracer.span("test-span");
     }
 
     #[test]
@@ -282,7 +287,7 @@ mod tests {
     fn inject_binary() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let mut span = tracer.span("test-span", StartOptions::default());
+        let mut span = tracer.span("test-span");
         span.set_baggage_item("a", "b");
 
         let mut buffer: Vec<u8> = Vec::new();
@@ -297,7 +302,7 @@ mod tests {
     fn inject_http_headers() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let mut span = tracer.span("test-span", StartOptions::default());
+        let mut span = tracer.span("test-span");
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();
@@ -318,7 +323,7 @@ mod tests {
     fn inject_textmap() {
         let (sender, _) = mpsc::channel();
         let tracer = Tracer::new(TestTracer {sender});
-        let mut span = tracer.span("test-span", StartOptions::default());
+        let mut span = tracer.span("test-span");
         span.set_baggage_item("a", "b");
 
         let mut map = HashMap::new();

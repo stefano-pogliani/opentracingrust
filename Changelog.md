@@ -18,6 +18,7 @@ Features
 - NoopTracer implementation.
 - Pass span initial references.
 - Pass span start time.
+- ReporterThread: a `FinishedSpan`s reported based on a background thread.
 - Span stores finish time.
 - Span stores start time.
 

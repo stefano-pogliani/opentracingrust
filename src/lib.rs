@@ -54,6 +54,8 @@
 //! ```
 //! extern crate opentracingrust;
 //!
+//! use std::time::Duration;
+//!
 //! use opentracingrust::tracers::NoopTracer;
 //! use opentracingrust::utils::GlobalTracer;
 //! use opentracingrust::utils::ReporterThread;
@@ -61,11 +63,12 @@
 //!
 //! fn main() {
 //!     let (tracer, receiver) = NoopTracer::new();
-//!     let reporter = ReporterThread::new(receiver, NoopTracer::report);
+//!     let reporter = ReporterThread::new_with_duration(
+//!         receiver, Duration::from_millis(50), NoopTracer::report
+//!     );
 //!     GlobalTracer::init(tracer);
-//!     reporter.start();
 //!
-//!     // ... snip ..,
+//!     // ... snip ...
 //! }
 //! ```
 //!
@@ -85,6 +88,8 @@
 //! ```
 //! extern crate opentracingrust;
 //!
+//! use std::time::Duration;
+//!
 //! use opentracingrust::SpanContext;
 //! use opentracingrust::StartOptions;
 //!
@@ -95,9 +100,10 @@
 //!
 //! fn main() {
 //!     let (tracer, receiver) = NoopTracer::new();
-//!     let reporter = ReporterThread::new(receiver, NoopTracer::report);
+//!     let reporter = ReporterThread::new_with_duration(
+//!         receiver, Duration::from_millis(50), NoopTracer::report
+//!     );
 //!     GlobalTracer::init(tracer);
-//!     reporter.start();
 //!     // Once the tracer is configured we can start working.
 //!     start_working();
 //! }

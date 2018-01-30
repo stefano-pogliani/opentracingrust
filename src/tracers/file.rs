@@ -40,6 +40,7 @@ const TRACE_ID_KEY: &str = "TraceID";
 /// extern crate opentracingrust;
 ///
 /// use std::io;
+/// use std::time::Duration;
 ///
 /// use opentracingrust::FinishedSpan;
 /// use opentracingrust::tracers::FileTracer;
@@ -51,11 +52,12 @@ const TRACE_ID_KEY: &str = "TraceID";
 ///     let (tracer, receiver) = FileTracer::new();
 ///     let tracer = GlobalTracer::init(tracer);
 ///
-///     let mut stderr = io::stderr();
-///     let reporter = ReporterThread::new(receiver, |span: FinishedSpan| {
-///         FileTracer::write_trace(span, &mut stderr).unwrap();
-///     });
-///     reporter.start();
+///     let reporter = ReporterThread::new_with_duration(
+///         receiver, Duration::from_millis(50), |span| {
+///             let mut stderr = io::stderr();
+///             FileTracer::write_trace(span, &mut stderr).unwrap();
+///         }
+///     );
 ///
 ///     // ... snip ...
 /// }

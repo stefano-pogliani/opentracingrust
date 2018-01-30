@@ -3,8 +3,10 @@ extern crate opentracingrust;
 
 use std::any::Any;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::mpsc;
+use std::time::Duration;
 
 use rand::random;
 
@@ -180,10 +182,13 @@ fn main() {
     // Initialise the tracer.
     let (tracer, receiver, store) = MemoryTracer::new();
     let tracer = GlobalTracer::init(tracer);
-    let reporter = ReporterThread::new(receiver, |span| {
-        MemoryTracer::store(&store, span);
+
+    let store = Arc::new(store);
+    let inner_store = Arc::clone(&store);
+    let mut reporter = ReporterThread::new(receiver, move |span| {
+        MemoryTracer::store(&inner_store, span);
     });
-    reporter.start();
+    reporter.stop_delay(Duration::from_secs(2));
 
     // Do some work.
     {

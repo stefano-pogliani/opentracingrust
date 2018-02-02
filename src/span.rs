@@ -98,6 +98,8 @@ pub struct Span {
     references: Vec<SpanReference>,
     sender: SpanSender,
     start_time: SystemTime,
+    // TODO: tags
+    // TODO: logs (serde serializable types only? any? enum? start with string?)
 }
 
 impl Span {
@@ -195,6 +197,11 @@ impl Span {
         self.context.get_baggage_item(key)
     }
 
+    /// Returns the operation name.
+    pub fn operation_name(&self) -> &str {
+        &self.name
+    }
+
     /// Adds a reference to a `SpanContext`.
     pub fn reference_span(&mut self, reference: SpanReference) {
         self.context.reference_span(&reference);
@@ -222,6 +229,11 @@ impl Span {
     /// Baggage items are **NOT** propagated backwards to `Span`s that reference this `Span`.
     pub fn set_baggage_item(&mut self, key: &str, value: &str) {
         self.context.set_baggage_item(String::from(key), String::from(value));
+    }
+
+    /// Updates the operation name.
+    pub fn set_operation_name(&mut self, name: &str) {
+        self.name = String::from(name);
     }
 }
 
@@ -374,6 +386,18 @@ mod tests {
         let span: Span = Span::new("test-span", context, options, sender);
         span.finish().unwrap();
         let _finished: FinishedSpan = receiver.recv().unwrap();
+    }
+
+    #[test]
+    fn set_span_name() {
+        let (sender, _) = mpsc::channel();
+        let context = SpanContext::new(ImplContextBox::new(TestContext {
+            id: String::from("test-id")
+        }));
+        let options = StartOptions::default();
+        let mut span = Span::new("test-span", context, options, sender);
+        span.set_operation_name("some-other-name");
+        assert_eq!("some-other-name", span.operation_name());
     }
 
     #[test]

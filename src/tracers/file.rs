@@ -15,6 +15,7 @@ use super::super::SpanReference;
 use super::super::SpanReferenceAware;
 use super::super::SpanSender;
 use super::super::StartOptions;
+use super::super::TagValue;
 
 use super::super::ExtractFormat;
 use super::super::InjectFormat;
@@ -193,6 +194,29 @@ impl FileTracer {
         buffer.push_str("===> Baggage items: [\n");
         for (key, value) in span.context().baggage_items() {
             buffer.push_str(&format!("===>   * {}: {}\n", key, value));
+        }
+        buffer.push_str("===> ]\n");
+
+        let mut tags: Vec<&String> = span.tags().iter()
+            .map(|(tag, _)| tag)
+            .collect();
+        tags.sort();
+        buffer.push_str("===> Tags: [\n");
+        for tag in tags {
+            match span.tags().get(tag).unwrap() {
+                &TagValue::Boolean(value) => buffer.push_str(
+                    &format!("===>   * {}: {}\n", tag, value)
+                ),
+                &TagValue::Float(value) => buffer.push_str(
+                    &format!("===>   * {}: {}\n", tag, value)
+                ),
+                &TagValue::Integer(value) => buffer.push_str(
+                    &format!("===>   * {}: {}\n", tag, value)
+                ),
+                &TagValue::String(ref value) => buffer.push_str(
+                    &format!("===>   * {}: {}\n", tag, value)
+                ),
+            }
         }
         buffer.push_str("===> ]\n");
         file.write_all(buffer.as_bytes())
@@ -448,6 +472,10 @@ mod tests {
             span.child_of(make_context(123456, 123));
             span.follows(make_context(123456, 456));
             span.set_baggage_item("TestKey", "Test Value");
+            span.tag("test.bool", true);
+            span.tag("test.float", 0.5);
+            span.tag("test.int", 5);
+            span.tag("test.string", "hello");
             span.finish().unwrap();
 
             let mut buffer = Vec::new();
@@ -466,6 +494,12 @@ mod tests {
                 "===> ]",
                 "===> Baggage items: [",
                 "===>   * TestKey: Test Value",
+                "===> ]",
+                "===> Tags: [",
+                "===>   * test.bool: true",
+                "===>   * test.float: 0.5",
+                "===>   * test.int: 5",
+                "===>   * test.string: hello",
                 "===> ]",
                 ""
             ]);

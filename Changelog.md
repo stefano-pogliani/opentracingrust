@@ -1,15 +1,18 @@
-Version 0.?.? (Unreleased)
+Version 0.2.2 (Unreleased)
 ==========================
 
-Breaking Changes
-----------------
-- ?
+Features
+--------
+- TODO: span logs
+
+
+Version 0.2.1 (2018-02-06)
+==========================
 
 Features
 --------
 - Update operation name.
-- TODO: span tags
-- TODO: span logs
+- Support span tags.
 
 
 Version 0.2.0 (2018-01-31)

@@ -4,6 +4,11 @@ use std::time::SystemTime;
 use super::Result;
 use super::SpanContext;
 
+pub mod tag;
+
+use self::tag::SpanTags;
+use self::tag::TagValue;
+
 
 /// A `Span` wrapper that finishes a span when dropped.
 ///
@@ -51,6 +56,7 @@ pub struct FinishedSpan {
     name: String,
     references: Vec<SpanReference>,
     start_time: SystemTime,
+    tags: SpanTags,
 }
 
 impl FinishedSpan {
@@ -78,6 +84,11 @@ impl FinishedSpan {
     pub fn start_time(&self) -> &SystemTime {
         &self.start_time
     }
+
+    /// Access the tags attached to the span.
+    pub fn tags(&self) -> &SpanTags {
+        &self.tags
+    }
 }
 
 
@@ -98,7 +109,7 @@ pub struct Span {
     references: Vec<SpanReference>,
     sender: SpanSender,
     start_time: SystemTime,
-    // TODO: tags
+    tags: SpanTags,
     // TODO: logs (serde serializable types only? any? enum? start with string?)
 }
 
@@ -122,6 +133,7 @@ impl Span {
             references: Vec::new(),
             sender,
             start_time: options.start_time.unwrap_or_else(SystemTime::now),
+            tags: SpanTags::new(),
         };
         for reference in options.references {
             span.reference_span(reference);
@@ -180,6 +192,7 @@ impl Span {
             name: self.name,
             references: self.references,
             start_time: self.start_time,
+            tags: self.tags,
         };
         self.sender.send(finished)?;
         Ok(())
@@ -234,6 +247,28 @@ impl Span {
     /// Updates the operation name.
     pub fn set_operation_name(&mut self, name: &str) {
         self.name = String::from(name);
+    }
+
+    /// Append a tag to the span.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate opentracingrust;
+    ///
+    /// use opentracingrust::tracers::NoopTracer;
+    ///
+    ///
+    /// fn main() {
+    ///     let (tracer, _) = NoopTracer::new();
+    ///     let mut span = tracer.span("some_work");
+    ///     span.tag("client.name", "some-tracing-client");
+    ///     span.tag("client.version", 3.4);
+    ///     // ... snip ...
+    /// }
+    /// ```
+    pub fn tag<TV: Into<TagValue>>(&mut self, tag: &str, value: TV) {
+        self.tags.tag(tag, value.into());
     }
 }
 
@@ -506,6 +541,91 @@ mod tests {
                 Some(&SpanReference::FollowsFrom(_)) => (),
                 Some(_) => panic!("Invalid span reference"),
                 None => panic!("Missing span reference")
+            }
+        }
+    }
+
+    mod tags {
+        use super::super::StartOptions;
+        use super::super::TagValue;
+
+        use super::TestContext;
+
+        #[test]
+        fn add_generic_tag() {
+            let (mut span, receiver) = TestContext::new(StartOptions::default());
+            span.tag("key", TagValue::String(String::from("value")));
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            match span.tags().get("key") {
+                Some(&TagValue::String(ref v)) => assert_eq!(v, "value"),
+                Some(_) => panic!("Invalid tag type"),
+                None => panic!("Tag not found")
+            }
+        }
+
+        #[test]
+        fn add_bool_tag() {
+            let (mut span, receiver) = TestContext::new(StartOptions::default());
+            span.tag("key", true);
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            match span.tags().get("key") {
+                Some(&TagValue::Boolean(v)) => assert_eq!(v, true),
+                Some(_) => panic!("Invalid tag type"),
+                None => panic!("Tag not found")
+            }
+        }
+
+        #[test]
+        fn add_float_tag() {
+            let (mut span, receiver) = TestContext::new(StartOptions::default());
+            span.tag("key", 1.2);
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            match span.tags().get("key") {
+                Some(&TagValue::Float(v)) => assert_eq!(v, 1.2),
+                Some(_) => panic!("Invalid tag type"),
+                None => panic!("Tag not found")
+            }
+        }
+
+        #[test]
+        fn add_integer_tag() {
+            let (mut span, receiver) = TestContext::new(StartOptions::default());
+            span.tag("key", -2);
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            match span.tags().get("key") {
+                Some(&TagValue::Integer(v)) => assert_eq!(v, -2),
+                Some(_) => panic!("Invalid tag type"),
+                None => panic!("Tag not found")
+            }
+        }
+
+        #[test]
+        fn add_str_tag() {
+            let (mut span, receiver) = TestContext::new(StartOptions::default());
+            span.tag("key", "value");
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            match span.tags().get("key") {
+                Some(&TagValue::String(ref v)) => assert_eq!(v, "value"),
+                Some(_) => panic!("Invalid tag type"),
+                None => panic!("Tag not found")
+            }
+        }
+
+        #[test]
+        fn add_string_tag() {
+            let (mut span, receiver) = TestContext::new(StartOptions::default());
+            span.tag("key", String::from("value"));
+            span.finish().unwrap();
+            let span = receiver.recv().unwrap();
+            match span.tags().get("key") {
+                Some(&TagValue::String(ref v)) => assert_eq!(v, "value"),
+                Some(_) => panic!("Invalid tag type"),
+                None => panic!("Tag not found")
             }
         }
     }

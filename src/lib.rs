@@ -168,5 +168,7 @@ pub use self::span::SpanReference;
 pub use self::span::SpanSender;
 pub use self::span::StartOptions;
 
+pub use self::span::tag::TagValue;
+
 pub use self::tracer::Tracer;
 pub use self::tracer::TracerInterface;

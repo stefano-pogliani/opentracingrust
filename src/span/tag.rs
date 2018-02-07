@@ -5,7 +5,7 @@ use std::collections::hash_map::Iter;
 /// Map strings to `TagValue`s.
 ///
 /// This structure is a tailored wrapper around `HashMap`s.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct SpanTags(HashMap<String, TagValue>);
 
 impl SpanTags {
@@ -34,7 +34,7 @@ impl SpanTags {
 
 
 /// Enumeration of valid types for tag values.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum TagValue {
     Boolean(bool),
     Float(f64),

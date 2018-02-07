@@ -20,7 +20,7 @@ use self::tag::TagValue;
 //   An AutoFinishingSpan is only created with a `Some(span)`.
 //   The `Drop::drop` method is the only method allowed to leave
 //   the AutoFinishingSpan with an inner `None`.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct AutoFinishingSpan(Option<Span>);
 
 impl AutoFinishingSpan {
@@ -49,7 +49,7 @@ impl Drop for AutoFinishingSpan {
 ///
 /// The span can no longer be altered since the operation is finished.
 /// `Tracer`s must provide a way to submit `FinishedSpan`a to the distributed tracer.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct FinishedSpan {
     context: SpanContext,
     finish_time: SystemTime,
@@ -101,7 +101,7 @@ impl FinishedSpan {
 /// with the mutating methods described below.
 ///
 /// Once an operation is complete the span should be finished with `Span::finished`.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Span {
     context: SpanContext,
     finish_time: Option<SystemTime>,

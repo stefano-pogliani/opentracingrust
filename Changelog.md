@@ -1,9 +1,13 @@
-Version 0.2.2 (Unreleased)
+Version 0.3.0 (Unreleased)
 ==========================
+
+Breaking Changes
+----------------
+- Don't implement clone for spans and tags.
 
 Features
 --------
-- TODO: span logs
+- Support span logs.
 
 
 Version 0.2.1 (2018-02-06)

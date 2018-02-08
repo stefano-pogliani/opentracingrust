@@ -1,6 +1,7 @@
 use std::io;
 use std::io::Write;
 use std::sync::mpsc;
+use std::time::UNIX_EPOCH;
 
 use rand::random;
 
@@ -8,6 +9,7 @@ use super::super::ImplContextBox;
 use super::super::Result;
 
 use super::super::FinishedSpan;
+use super::super::LogValue;
 use super::super::Span;
 use super::super::SpanContext;
 use super::super::SpanReceiver;
@@ -197,25 +199,37 @@ impl FileTracer {
         }
         buffer.push_str("===> ]\n");
 
-        let mut tags: Vec<&String> = span.tags().iter()
-            .map(|(tag, _)| tag)
-            .collect();
-        tags.sort();
+        let mut tags: Vec<(&String, &TagValue)> = span.tags().iter().collect();
+        tags.sort_by_key(|&(k, _)| k);
         buffer.push_str("===> Tags: [\n");
-        for tag in tags {
-            match span.tags().get(tag).unwrap() {
-                &TagValue::Boolean(value) => buffer.push_str(
-                    &format!("===>   * {}: {}\n", tag, value)
-                ),
-                &TagValue::Float(value) => buffer.push_str(
-                    &format!("===>   * {}: {}\n", tag, value)
-                ),
-                &TagValue::Integer(value) => buffer.push_str(
-                    &format!("===>   * {}: {}\n", tag, value)
-                ),
-                &TagValue::String(ref value) => buffer.push_str(
-                    &format!("===>   * {}: {}\n", tag, value)
-                ),
+        for (tag, value) in tags {
+            let value = match value {
+                &TagValue::Boolean(v) => v.to_string(),
+                &TagValue::Float(v) => v.to_string(),
+                &TagValue::Integer(v) => v.to_string(),
+                &TagValue::String(ref v) => v.clone(),
+            };
+            buffer.push_str(&format!("===>   * {}: {}\n", tag, value));
+        }
+        buffer.push_str("===> ]\n");
+
+        buffer.push_str("===> Logs: [\n");
+        for log in span.logs().iter() {
+            let timestamp = log.timestamp().unwrap()
+                .duration_since(UNIX_EPOCH).unwrap()
+                .as_secs();
+            buffer.push_str(&format!("===>   - {}:\n", timestamp));
+
+            let mut fields: Vec<(&String, &LogValue)> = log.iter().collect();
+            fields.sort_by_key(|&(k, _)| k);
+            for (key, value) in fields {
+                let value = match value {
+                    &LogValue::Boolean(v) => v.to_string(),
+                    &LogValue::Float(v) => v.to_string(),
+                    &LogValue::Integer(v) => v.to_string(),
+                    &LogValue::String(ref v) => v.clone(),
+                };
+                buffer.push_str(&format!("===>     * {}: {}\n", key, value));
             }
         }
         buffer.push_str("===> ]\n");
@@ -270,6 +284,11 @@ mod tests {
 
 
     mod span {
+        use std::time::UNIX_EPOCH;
+        use std::time::Duration;
+
+        use super::super::super::super::Log;
+
         use super::super::FileTracer;
         use super::super::FileTracerContext;
         use super::make_context;
@@ -476,6 +495,17 @@ mod tests {
             span.tag("test.float", 0.5);
             span.tag("test.int", 5);
             span.tag("test.string", "hello");
+
+            span.log(Log::new()
+                .log("bool", false)
+                .log("float", 0.66)
+                .at(UNIX_EPOCH + Duration::from_secs(123456))
+            );
+            span.log(Log::new()
+                .log("int", 66)
+                .log("string", "message")
+                .at(UNIX_EPOCH + Duration::from_secs(654321))
+            );
             span.finish().unwrap();
 
             let mut buffer = Vec::new();
@@ -500,6 +530,14 @@ mod tests {
                 "===>   * test.float: 0.5",
                 "===>   * test.int: 5",
                 "===>   * test.string: hello",
+                "===> ]",
+                "===> Logs: [",
+                "===>   - 123456:",
+                "===>     * bool: false",
+                "===>     * float: 0.66",
+                "===>   - 654321:",
+                "===>     * int: 66",
+                "===>     * string: message",
                 "===> ]",
                 ""
             ]);

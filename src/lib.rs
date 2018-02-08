@@ -168,6 +168,8 @@ pub use self::span::SpanReference;
 pub use self::span::SpanSender;
 pub use self::span::StartOptions;
 
+pub use self::span::log::Log;
+pub use self::span::log::LogValue;
 pub use self::span::tag::TagValue;
 
 pub use self::tracer::Tracer;

@@ -4,8 +4,10 @@ use std::time::SystemTime;
 use super::Result;
 use super::SpanContext;
 
+pub mod log;
 pub mod tag;
 
+use self::log::Log;
 use self::tag::SpanTags;
 use self::tag::TagValue;
 
@@ -34,6 +36,11 @@ impl AutoFinishingSpan {
     pub fn context(&self) -> &SpanContext {
         self.0.as_ref().unwrap().context()
     }
+
+    /// Attach a log event to the span.
+    pub fn log(&mut self, log: Log) {
+        self.0.as_mut().unwrap().log(log);
+    }
 }
 
 impl Drop for AutoFinishingSpan {
@@ -53,6 +60,7 @@ impl Drop for AutoFinishingSpan {
 pub struct FinishedSpan {
     context: SpanContext,
     finish_time: SystemTime,
+    logs: Vec<Log>,
     name: String,
     references: Vec<SpanReference>,
     start_time: SystemTime,
@@ -70,6 +78,11 @@ impl FinishedSpan {
         &self.finish_time
     }
 
+    /// Access the logs attached to this span.
+    pub fn logs(&self) -> &Vec<Log> {
+        &self.logs
+    }
+
     /// Access the name of the operation.
     pub fn name(&self) -> &String {
         &self.name
@@ -85,7 +98,7 @@ impl FinishedSpan {
         &self.start_time
     }
 
-    /// Access the tags attached to the span.
+    /// Access the tags attached to this span.
     pub fn tags(&self) -> &SpanTags {
         &self.tags
     }
@@ -105,12 +118,12 @@ impl FinishedSpan {
 pub struct Span {
     context: SpanContext,
     finish_time: Option<SystemTime>,
+    logs: Vec<Log>,
     name: String,
     references: Vec<SpanReference>,
     sender: SpanSender,
     start_time: SystemTime,
     tags: SpanTags,
-    // TODO: logs (serde serializable types only? any? enum? start with string?)
 }
 
 impl Span {
@@ -129,6 +142,7 @@ impl Span {
         let mut span = Span {
             context,
             finish_time: None,
+            logs: Vec::new(),
             name: String::from(name),
             references: Vec::new(),
             sender,
@@ -189,6 +203,7 @@ impl Span {
         let finished = FinishedSpan {
             context: self.context,
             finish_time: self.finish_time.unwrap_or_else(SystemTime::now),
+            logs: self.logs,
             name: self.name,
             references: self.references,
             start_time: self.start_time,
@@ -208,6 +223,12 @@ impl Span {
     /// If there is no item with the given key this method returns `None`.
     pub fn get_baggage_item(&self, key: &str) -> Option<&String> {
         self.context.get_baggage_item(key)
+    }
+
+    /// Attach a log event to the span.
+    pub fn log(&mut self, mut log: Log) {
+        log.at_or_now();
+        self.logs.push(log);
     }
 
     /// Returns the operation name.
@@ -543,6 +564,13 @@ mod tests {
                 None => panic!("Missing span reference")
             }
         }
+    }
+
+    mod logs {
+        // TODO: add and get logs with time.
+        // TODO: add and get logs without time.
+        // TODO: reject logs with time older then start.
+        // TODO: reject logs with time newer then finish.
     }
 
     mod tags {

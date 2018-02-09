@@ -1,5 +1,4 @@
-use std::sync::mpsc;
-
+use crossbeam_channel::unbounded;
 use rand::random;
 
 use super::super::ImplContextBox;
@@ -73,7 +72,7 @@ impl TracerInterface for NoopTracer {
 impl NoopTracer {
     /// Instantiate a new `NoopTracer`.
     pub fn new() -> (Tracer, SpanReceiver) {
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = unbounded();
         let tracer = NoopTracer { sender };
         (Tracer::new(tracer), receiver)
     }

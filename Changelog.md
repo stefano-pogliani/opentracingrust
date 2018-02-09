@@ -5,6 +5,7 @@ Breaking Changes
 ----------------
 - Don't implement clone for spans and tags.
 - GlobalTracer mutually exclude access to the tracer.
+- Replace channels with crossbeam-channel.
 
 Features
 --------

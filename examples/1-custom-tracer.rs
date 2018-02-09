@@ -1,3 +1,4 @@
+extern crate crossbeam_channel;
 extern crate rand;
 extern crate opentracingrust;
 
@@ -5,9 +6,9 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::mpsc;
 use std::time::Duration;
 
+use crossbeam_channel::unbounded;
 use rand::random;
 
 use opentracingrust::ExtractFormat;
@@ -141,7 +142,7 @@ impl TracerInterface for MemoryTracer {
 
 impl MemoryTracer {
     pub fn new() -> (Tracer, SpanReceiver, MemoryTracerStore) {
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = unbounded();
         let tracer = MemoryTracer { sender };
         (Tracer::new(tracer), receiver, Mutex::new(HashMap::new()))
     }

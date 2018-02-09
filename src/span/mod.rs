@@ -1,5 +1,7 @@
-use std::sync::mpsc;
 use std::time::SystemTime;
+
+use crossbeam_channel::Receiver;
+use crossbeam_channel::Sender;
 
 use super::Result;
 use super::SpanContext;
@@ -132,7 +134,7 @@ impl Span {
     /// This function is for use by `TracerInterface` implementations in their
     /// `TracerInterface::span` method.
     ///
-    /// The `sender` argument is the sending end of an `mpsc::channel`.
+    /// The `sender` argument is the sending end of an `crossbeam_channel::unbounded`.
     /// The receiving end of this channel, usually returned by the tracer's initialisation
     /// routine, will gather `FinishedSpan`s so they can be shipped to the distributed tracer.
     pub fn new(
@@ -195,8 +197,8 @@ impl Span {
     /// Finished a span and sends it to the tracer's receiver..
     ///
     /// Consumes a `Span` to create a `FinishedSpan`.
-    /// The finished span is then send to the tracer's `mpsc::Receiver` associated
-    /// with the span at the time of creation.
+    /// The finished span is then send to the tracer's `crossbeam_channel::Receiver`
+    /// associated with the span at the time of creation.
     ///
     /// Any error sending the span is returned to the caller.
     pub fn finish(self) -> Result<()> {
@@ -304,11 +306,11 @@ pub enum SpanReference {
 }
 
 
-/// Type alias for an `mpsc::Receiver` of `FinishedSpan`s.
-pub type SpanReceiver = mpsc::Receiver<FinishedSpan>;
+/// Type alias for an `crossbeam_channel::Receiver` of `FinishedSpan`s.
+pub type SpanReceiver = Receiver<FinishedSpan>;
 
-/// Type alias for an `mpsc::Sender` of `FinishedSpan`s.
-pub type SpanSender = mpsc::Sender<FinishedSpan>;
+/// Type alias for an `crossbeam_channel::Sender` of `FinishedSpan`s.
+pub type SpanSender = Sender<FinishedSpan>;
 
 
 /// Additional options that are passed to `Tracer::span`.
@@ -385,8 +387,9 @@ impl Default for StartOptions {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::mpsc;
     use std::time::Duration;
+
+    use crossbeam_channel::unbounded;
 
     use super::super::ImplContextBox;
     use super::super::SpanContext;
@@ -405,7 +408,7 @@ mod tests {
     }
     impl TestContext {
         fn new(options: StartOptions) -> (Span, SpanReceiver) {
-            let (sender, receiver) = mpsc::channel();
+            let (sender, receiver) = unbounded();
             let context = SpanContext::new(ImplContextBox::new(TestContext {
                 id: String::from("test-id")
             }));
@@ -434,7 +437,7 @@ mod tests {
 
     #[test]
     fn send_span_on_finish() {
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = unbounded();
         let context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id")
         }));
@@ -446,7 +449,7 @@ mod tests {
 
     #[test]
     fn set_span_name() {
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id")
         }));
@@ -458,7 +461,7 @@ mod tests {
 
     #[test]
     fn span_child_of_another() {
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id-1")
         }));
@@ -482,7 +485,7 @@ mod tests {
 
     #[test]
     fn span_follows_another() {
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let context = SpanContext::new(ImplContextBox::new(TestContext {
             id: String::from("test-id-1")
         }));

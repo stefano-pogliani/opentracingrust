@@ -26,8 +26,9 @@ use super::StartOptions;
 ///   * An inner tracer that implements `TracerInterface` to inject/extract/create spans.
 ///   * A function that sends `FinishedSpan`s to the distributed tracer.
 ///
-/// How these elements are implemented and what they do is up to the tracer implementation with one
-/// exception: `FinishedSpan`s are sent over an `mpsc::channel` so `ImplContext` has to be `Send`.
+/// How these elements are implemented and what they do is up to the tracer implementation
+/// with one exception: `FinishedSpan`s are sent over an `crossbeam_channel::unbounded`
+/// so `ImplContext` has to be `Send`.
 ///
 /// # Examples
 ///
@@ -104,8 +105,8 @@ mod tests {
     use std::collections::HashMap;
     use std::io;
     use std::io::BufRead;
-    use std::sync::mpsc;
 
+    use crossbeam_channel::unbounded;
 
     use super::super::ExtractFormat;
     use super::super::InjectFormat;
@@ -230,7 +231,7 @@ mod tests {
 
     #[test]
     fn create_span() {
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let tracer = Tracer::new(TestTracer {sender});
         let _span: Span = tracer.span("test-span");
     }
@@ -238,7 +239,7 @@ mod tests {
     #[test]
     fn extract_binary() {
         let mut buffer = io::Cursor::new("test-span\na:b\n");
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let tracer = Tracer::new(TestTracer {sender});
         let context = tracer.extract(
             ExtractFormat::Binary(Box::new(&mut buffer))
@@ -256,7 +257,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert(String::from("Span-Name"), String::from("2"));
         map.insert(String::from("Baggage-a"), String::from("b"));
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let tracer = Tracer::new(TestTracer {sender});
         let context = tracer.extract(ExtractFormat::HttpHeaders(Box::new(&map))).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
@@ -272,7 +273,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert(String::from("span-name"), String::from("2"));
         map.insert(String::from("baggage-a"), String::from("b"));
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let tracer = Tracer::new(TestTracer {sender});
         let context = tracer.extract(ExtractFormat::TextMap(Box::new(&map))).unwrap().unwrap();
         let inner = context.impl_context::<TestContext>().unwrap();
@@ -285,7 +286,7 @@ mod tests {
 
     #[test]
     fn inject_binary() {
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let tracer = Tracer::new(TestTracer {sender});
         let mut span = tracer.span("test-span");
         span.set_baggage_item("a", "b");
@@ -300,7 +301,7 @@ mod tests {
 
     #[test]
     fn inject_http_headers() {
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let tracer = Tracer::new(TestTracer {sender});
         let mut span = tracer.span("test-span");
         span.set_baggage_item("a", "b");
@@ -321,7 +322,7 @@ mod tests {
 
     #[test]
     fn inject_textmap() {
-        let (sender, _) = mpsc::channel();
+        let (sender, _) = unbounded();
         let tracer = Tracer::new(TestTracer {sender});
         let mut span = tracer.span("test-span");
         span.set_baggage_item("a", "b");

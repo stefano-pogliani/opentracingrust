@@ -37,9 +37,10 @@ use super::SpanReference;
 /// # Examples
 ///
 /// ```
+/// extern crate crossbeam_channel;
 /// extern crate opentracingrust;
 ///
-/// use std::sync::mpsc;
+/// use crossbeam_channel::unbounded;
 ///
 /// use opentracingrust::ImplContextBox;
 /// use opentracingrust::Span;
@@ -64,7 +65,7 @@ use super::SpanReference;
 ///     let mut context = SpanContext::new(ImplContextBox::new(Context {}));
 ///     context.set_baggage_item(String::from("key1"), String::from("value1"));
 ///
-///     let (sender, _) = mpsc::channel();
+///     let (sender, _) = unbounded();
 ///     let mut span = Span::new(
 ///         "test",
 ///         SpanContext::new(ImplContextBox::new(Context {})),

@@ -1,8 +1,8 @@
 use std::io;
 use std::io::Write;
-use std::sync::mpsc;
 use std::time::UNIX_EPOCH;
 
+use crossbeam_channel::unbounded;
 use rand::random;
 
 use super::super::ImplContextBox;
@@ -147,7 +147,7 @@ impl TracerInterface for FileTracer {
 impl FileTracer {
     /// Instantiate a new file tracer.
     pub fn new() -> (Tracer, SpanReceiver) {
-        let (sender, receiver) = mpsc::channel();
+        let (sender, receiver) = unbounded();
         let tracer = FileTracer { sender };
         (Tracer::new(tracer), receiver)
     }

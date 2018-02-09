@@ -43,7 +43,7 @@
 //! implemented as desired but there are two requirements of concrete tracers:
 //!
 //!   * Initialisation returns instance of `Tracer`.
-//!   * A `std::sync::mpsc::channel` is used by the tracer to send
+//!   * A `crossbeam_channel::unbounded` is used by the tracer to send
 //!     `FinishedSpan`s to a reporting thread.
 //!
 //! The reporting thread is responsible for pushing the spans to the
@@ -135,6 +135,7 @@
 //!
 //! The `NoopTracer` is the perfect tool to write tests with and a good default
 //! for examples and projects that do not yet implement full tracing support.
+extern crate crossbeam_channel;
 extern crate rand;
 
 mod carrier;

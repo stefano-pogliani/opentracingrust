@@ -1,7 +1,8 @@
 use std::io;
 use std::num;
 use std::result;
-use std::sync::mpsc;
+
+use crossbeam_channel::SendError;
 
 use super::span::FinishedSpan;
 
@@ -12,7 +13,7 @@ pub enum Error {
     IoError(self::io::Error),
     Msg(String),
     ParseIntError(self::num::ParseIntError),
-    SendError(self::mpsc::SendError<FinishedSpan>)
+    SendError(self::SendError<FinishedSpan>)
 }
 
 impl From<self::io::Error> for Error {
@@ -27,8 +28,8 @@ impl From<self::num::ParseIntError> for Error {
     }
 }
 
-impl From<self::mpsc::SendError<FinishedSpan>> for Error {
-    fn from(error: self::mpsc::SendError<FinishedSpan>) -> Self {
+impl From<self::SendError<FinishedSpan>> for Error {
+    fn from(error: self::SendError<FinishedSpan>) -> Self {
         Error::SendError(error)
     }
 }

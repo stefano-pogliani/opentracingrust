@@ -1,4 +1,4 @@
-Version 0.3.0 (Unreleased)
+Version 0.3.0 (2018-02-09)
 ==========================
 
 Breaking Changes

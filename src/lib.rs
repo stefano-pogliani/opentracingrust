@@ -109,16 +109,14 @@
 //! }
 //!
 //! fn start_working() {
-//!     let tracer = GlobalTracer::get();
-//!     let mut root_span = tracer.span("start_working");
+//!     let mut root_span = GlobalTracer::get().span("start_working");
 //!     // The actual work is done in a sub-operation.
 //!     do_work(root_span.context().clone());
 //!     root_span.finish();
 //! }
 //!
 //! fn do_work(context: SpanContext) {
-//!     let tracer = GlobalTracer::get();
-//!     let mut span = tracer.span_with_options(
+//!     let mut span = GlobalTracer::get().span_with_options(
 //!         "do_work", StartOptions::default().child_of(context)
 //!     );
 //!     // ... do work ...

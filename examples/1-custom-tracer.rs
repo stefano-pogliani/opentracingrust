@@ -181,7 +181,7 @@ type MemoryTracerStore = Mutex<HashMap<u64, Vec<FinishedSpan>>>;
 fn main() {
     // Initialise the tracer.
     let (tracer, receiver, store) = MemoryTracer::new();
-    let tracer = GlobalTracer::init(tracer);
+    GlobalTracer::init(tracer);
 
     let store = Arc::new(store);
     let inner_store = Arc::clone(&store);
@@ -192,7 +192,7 @@ fn main() {
 
     // Do some work.
     {
-        let span = tracer.span("root");
+        let span = GlobalTracer::get().span("root");
         // ... snip ...
         span.finish().expect("Unable to finish span");
     }

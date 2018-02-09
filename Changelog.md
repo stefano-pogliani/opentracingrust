@@ -4,6 +4,7 @@ Version 0.3.0 (Unreleased)
 Breaking Changes
 ----------------
 - Don't implement clone for spans and tags.
+- GlobalTracer mutually exclude access to the tracer.
 
 Features
 --------

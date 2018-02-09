@@ -1,9 +1,10 @@
-use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::MutexGuard;
 
 use super::super::Tracer;
 
 
-static mut GLOBAL_TRACER: Option<Arc<Tracer>> = None;
+static mut GLOBAL_TRACER: Option<Mutex<Tracer>> = None;
 
 
 /// Utility singleton to store the process's `Tracer`.
@@ -16,15 +17,12 @@ static mut GLOBAL_TRACER: Option<Arc<Tracer>> = None;
 /// > *The `GlobalTracer::init` method is NOT thread safe and MUST be called
 /// > before any thread is spawned or threads will panic!*
 ///
-/// The `GlobalTracer` stores an atomic reference counter `Tracer`.
+/// The `GlobalTracer` stores a mutually exclusive `Tracer`.
 /// This can then be requested by each thread with `GlobalTracer::get`.
 ///
 /// Once initialised, the `GlobalTracer` cannot be changed or dropped.
 /// Be aware that the `GlobalTracer` is backed by a static global variable
 /// so tracers implementing the `Drop` traits WILL NOT be dropped.
-///
-/// The use of a static global variable that returns read-only references
-/// allows the `Tracer` to be accessed easily and cheaply.
 ///
 /// # Examples
 ///
@@ -37,14 +35,13 @@ static mut GLOBAL_TRACER: Option<Arc<Tracer>> = None;
 ///
 /// fn main() {
 ///    let (tracer, _) = NoopTracer::new();
-///    let tracer = GlobalTracer::init(tracer);
+///    GlobalTracer::init(tracer);
+///    let span = GlobalTracer::get().span("root");
 /// }
 /// ```
 pub struct GlobalTracer {}
 impl GlobalTracer {
     /// Initialises the `GlobalTracer` to store the given `Tracer` instance.
-    ///
-    /// Returns an `Arc` reference to the stored `Tracer`.
     ///
     /// > *Applications should initialise the `GlobalTracer::init` as soon as possible!*
     /// >
@@ -54,34 +51,25 @@ impl GlobalTracer {
     /// # Panics
     ///
     /// Panics if the `GlobalTracer` is already initialised with a `Tracer`.
-    pub fn init(tracer: Tracer) -> Arc<Tracer> {
+    pub fn init(tracer: Tracer) {
         unsafe {
             match GLOBAL_TRACER {
-                None => GLOBAL_TRACER = Some(Arc::new(tracer)),
+                None => GLOBAL_TRACER = Some(Mutex::new(tracer)),
                 _ => panic!("GlobalTracer already initialised")
             }
         }
-        GlobalTracer::get()
     }
 
-    /// Access the singleton `Tracer` instance.
-    ///
-    /// Returns an `Arc` reference to the stored `Tracer`.
-    ///
-    /// > *The `GlobalTracer::get` method does NOT perform any locking
-    /// > just like `GlobalTracer::init` does NOT.*
-    ///
-    /// > *Unlike, `GlobalTracer::init`, this method can be considered thread
-    /// > safe as it returns references to immutable, static, data.*
+    /// Exclusively access the singleton `Tracer` instance.
     ///
     /// # Panics
     ///
     /// Panics if the singleton `Tracer` is requested before the `GlobalTracer` is initialised.
-    pub fn get() -> Arc<Tracer> {
+    pub fn get() -> MutexGuard<'static, Tracer> {
         unsafe {
             let tracer = GLOBAL_TRACER.as_ref()
                 .expect("GlobalTracer not initialised, call GlobalTracer::init first");
-            Arc::clone(tracer)
+            tracer.lock().expect("Failed to lock GlobalTracer")
         }
     }
 
@@ -147,7 +135,7 @@ mod tests {
     fn tracer_must_be_set() {
         thread::sleep(Duration::from_millis(5));
         GlobalTracer::reset();
-        GlobalTracer::get();
+        let _tracer = GlobalTracer::get();
     }
 
     #[test]

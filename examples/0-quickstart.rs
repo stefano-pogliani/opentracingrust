@@ -43,7 +43,7 @@ fn main() {
     // To do so we instantiate a tracer implementation and wrap it inside a Tracer.
     // A tracer implementation is any struct that implements the `TracerInterface` trait.
     let (tracer, receiver) = FileTracer::new();
-    let tracer = GlobalTracer::init(tracer);
+    GlobalTracer::init(tracer);
 
     // Then we create a thread that will receive finished spans and write them to stderr.
     let looping = Arc::new(AtomicBool::new(true));
@@ -57,7 +57,7 @@ fn main() {
     });
 
     // Now that our tracer is set up we can create spans to trace operations.
-    let root = tracer.span("main");
+    let root = GlobalTracer::get().span("main");
     let f4 = fibonacci(8, root.context().clone());
     println!("fibonacci(8) = {}", f4);
 
@@ -76,16 +76,15 @@ fn main() {
 fn fibonacci(n: u64, parent: SpanContext) -> u64 {
     // To create a new span for this operation set the parent span.
     let options = StartOptions::default().child_of(parent);
-    let tracer = GlobalTracer::get();
     if n <= 2 {
         // Since this is the base case we finish the span immediately.
-        let span = tracer.span_with_options("fibonacci base case", options);
+        let span = GlobalTracer::get().span_with_options("fibonacci base case", options);
         span.finish().unwrap();
         1
     } else {
         // Since this is the iterative case we recourse passing the new span's
         // context as the new parent span.
-        let span = tracer.span_with_options("fibonacci iterative case", options);
+        let span = GlobalTracer::get().span_with_options("fibonacci iterative case", options);
         let n1 = fibonacci(n - 1, span.context().clone());
         let n2 = fibonacci(n - 2, span.context().clone());
         // Once the recoursive operations terminate we can close the current span.

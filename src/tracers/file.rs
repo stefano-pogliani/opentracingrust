@@ -53,7 +53,7 @@ const TRACE_ID_KEY: &str = "TraceID";
 ///
 /// fn main() {
 ///     let (tracer, receiver) = FileTracer::new();
-///     let tracer = GlobalTracer::init(tracer);
+///     GlobalTracer::init(tracer);
 ///
 ///     let reporter = ReporterThread::new_with_duration(
 ///         receiver, Duration::from_millis(50), |span| {

@@ -1,3 +1,8 @@
+Version 0.3.1 (Unrelease)
+=========================
+- Implement `AsMut<Span>` for `Span`.
+- Utility trait to fail spans on `Err`.
+
 Version 0.3.0 (2018-02-09)
 ==========================
 

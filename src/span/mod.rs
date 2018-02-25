@@ -295,6 +295,12 @@ impl Span {
     }
 }
 
+impl AsMut<Span> for Span {
+    fn as_mut(&mut self) -> &mut Span {
+        self
+    }
+}
+
 
 /// Enumerates all known relationships among `SpanContext`s.
 ///

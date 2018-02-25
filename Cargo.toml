@@ -1,6 +1,6 @@
 [package]
 name = "opentracingrust"
-version = "0.3.0"
+version = "0.3.1" # Remember to update html_root_url
 authors = ["Stefano Pogliani <stefano@spogliani.net>"]
 
 description = "opentracing.io library for rust"

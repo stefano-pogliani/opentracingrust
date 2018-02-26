@@ -1,3 +1,5 @@
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::time::SystemTime;
 
 use crossbeam_channel::Receiver;
@@ -42,6 +44,25 @@ impl AutoFinishingSpan {
     /// Attach a log event to the span.
     pub fn log(&mut self, log: Log) {
         self.0.as_mut().unwrap().log(log);
+    }
+}
+
+impl AsMut<Span> for AutoFinishingSpan {
+    fn as_mut(&mut self) -> &mut Span {
+        self.0.as_mut().unwrap()
+    }
+}
+
+impl Deref for AutoFinishingSpan {
+    type Target = Span;
+    fn deref(&self) -> &Span {
+        self.0.as_ref().unwrap()
+    }
+}
+
+impl DerefMut for AutoFinishingSpan {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0.as_mut().unwrap()
     }
 }
 
@@ -402,6 +423,7 @@ mod tests {
     use super::super::SpanReferenceAware;
     use super::super::StartOptions;
 
+    use super::AutoFinishingSpan;
     use super::FinishedSpan;
     use super::Span;
     use super::SpanReceiver;
@@ -434,6 +456,28 @@ mod tests {
             span.auto_finish();
         }
         receiver.recv_timeout(Duration::from_secs(1)).unwrap();
+    }
+
+    #[test]
+    fn autofinish_as_mut() {
+        let options = StartOptions::default();
+        let (span, _reciver) = TestContext::new(options);
+        let mut span: AutoFinishingSpan = span.auto_finish();
+        let span_ref: &mut Span = span.as_mut();
+        span_ref.tag("key", "value");
+    }
+
+    #[test]
+    fn autofinish_deref() {
+        let options = StartOptions::default();
+        let (span, _reciver) = TestContext::new(options);
+        let mut span: AutoFinishingSpan = span.auto_finish();
+        {
+            let _span_ref: &Span = &span;
+        }
+        {
+            let _mut_ref: &mut Span = &mut span;
+        }
     }
 
     #[test]

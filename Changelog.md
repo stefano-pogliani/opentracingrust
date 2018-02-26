@@ -1,7 +1,9 @@
-Version 0.3.1 (Unrelease)
-=========================
+Version 0.3.1 (2018-02-26)
+==========================
 - Implement `AsMut<Span>` for `AutoFinishingSpan`.
 - Implement `AsMut<Span>` for `Span`.
+- Make `GlobalTracer::reset` public for tests.
+- Make `TracerInterface` and `Tracer` `Sync`.
 - Utility trait to fail spans on `Err`.
 
 Version 0.3.0 (2018-02-09)

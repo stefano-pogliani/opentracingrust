@@ -75,7 +75,7 @@ impl GlobalTracer {
 
     /// Allow tests to clean up before they run.
     #[cfg(test)]
-    fn reset() {
+    pub fn reset() {
         unsafe {
             GLOBAL_TRACER = None
         }

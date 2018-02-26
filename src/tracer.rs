@@ -36,7 +36,7 @@ use super::StartOptions;
 ///
 ///   * The `FileTracer` implementation that is part of OpenTracingRust.
 ///   * Example `1-custom-tracer.rs`, which implements an in-memory tracer.
-pub trait TracerInterface : Send {
+pub trait TracerInterface : Send + Sync {
     /// Attempt to extract a SpanContext from a carrier.
     fn extract(&self, fmt: ExtractFormat) -> Result<Option<SpanContext>>;
 

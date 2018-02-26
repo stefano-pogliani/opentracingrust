@@ -12,6 +12,20 @@
 //!   * Applications lock end-users into a distributed tracer.
 //!
 //!
+//! # Official API heads up
+//!
+//! An Opentracing official API is in the works: https://github.com/opentracing/opentracing-rust
+//!
+//! Once the official API crate and utility crate are finished I hope to deprecate
+//! this crate in favour of the official crates.
+//!
+//! For that reason, development of this crate will be limited while I dedicate my
+//! time to help with the development of the offical opentracing-api crate.
+//!
+//! Lessons learend while developing this crate will be valuable knowledge for opentracing-api.
+//! If you find any issue and or usability limit, please let me know!
+//!
+//!
 //! # Architecture
 //!
 //! At the core of this library are three types:

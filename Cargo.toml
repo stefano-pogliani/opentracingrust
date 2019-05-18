@@ -12,5 +12,5 @@ keywords = ["opentracing", "tracing"]
 license = "MIT"
 
 [dependencies]
-crossbeam-channel = "^0.1.2"
-rand = "^0.4.0"
+crossbeam-channel = "^0.3.8"
+rand = "^0.6.5"

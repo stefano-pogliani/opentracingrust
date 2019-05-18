@@ -149,7 +149,7 @@
 //!
 //! The `NoopTracer` is the perfect tool to write tests with and a good default
 //! for examples and projects that do not yet implement full tracing support.
-#![doc(html_root_url = "https://docs.rs/opentracingrust/0.3.1")]
+#![doc(html_root_url = "https://docs.rs/opentracingrust/0.3.2")]
 extern crate crossbeam_channel;
 extern crate rand;
 

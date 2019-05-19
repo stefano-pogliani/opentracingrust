@@ -69,7 +69,7 @@ impl DerefMut for AutoFinishingSpan {
 impl Drop for AutoFinishingSpan {
     fn drop(&mut self) {
         if let Some(span) = self.0.take() {
-            span.finish().expect("Failed to auto-finish span");
+            let _ = span.finish();
         }
     }
 }

@@ -30,7 +30,7 @@ use self::tag::TagValue;
 pub struct AutoFinishingSpan(Option<Span>);
 
 impl AutoFinishingSpan {
-    pub fn new(span: Span) -> AutoFinishingSpan {
+    pub(crate) fn new(span: Span) -> AutoFinishingSpan {
         AutoFinishingSpan(Some(span))
     }
 }

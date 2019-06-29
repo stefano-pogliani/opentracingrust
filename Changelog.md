@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.4] - 2019-06-29
+### Changed
+- `AutoFinishingSpan` is exported for use in parameters.
+
 ## [0.3.3] - 2019-05-19
 ### Changed
 - `AutoFinishingSpan` now ignores send errors instead of panicking.

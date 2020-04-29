@@ -12,9 +12,6 @@ This library is in alpha state!
 ### Feature completeness
 The library is almost feature-complete with OpenTracing v1.1
 
-Feature completeness with OpenTracing 1.1 is expected in
-version 0.3.0 of OpenTracingRust.
-
 ### Stability
 Most features are just out the door and not extensively
 tested in production environments.

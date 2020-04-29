@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.4.0] - 2020-04-29
+### Changed
+- Updated dependencies to latest available.
+
 ## [0.3.4] - 2019-06-29
 ### Changed
 - `AutoFinishingSpan` is exported for use in parameters.

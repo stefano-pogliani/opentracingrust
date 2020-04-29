@@ -40,11 +40,11 @@ struct InnerContext {
 }
 
 impl ImplContext for InnerContext {
-    fn impl_context(&self) -> &Any {
+    fn impl_context(&self) -> &dyn Any {
         self
     }
 
-    fn clone(&self) -> Box<ImplContext> {
+    fn clone(&self) -> Box<dyn ImplContext> {
         Box::new(InnerContext {
             trace_id: self.trace_id.clone(),
             span_id: self.span_id.clone(),

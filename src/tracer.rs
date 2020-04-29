@@ -55,7 +55,7 @@ pub trait TracerInterface : Send + Sync {
 ///
 /// The `Tracer` structure also provides some utility methods to make common operations easier.
 pub struct Tracer {
-    tracer: Box<TracerInterface>
+    tracer: Box<dyn TracerInterface>
 }
 
 impl Tracer {

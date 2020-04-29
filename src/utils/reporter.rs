@@ -66,7 +66,7 @@ impl ReporterThread {
         // Return a wrapper around the thread.
         ReporterThread {
             stop_delay: Duration::from_secs(STOP_DEALY_SEC_DEFAULT),
-            stopping: stopping,
+            stopping,
             thread_handle: Some(thread),
         }
     }

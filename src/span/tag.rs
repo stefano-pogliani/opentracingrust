@@ -5,7 +5,7 @@ use std::collections::hash_map::Iter;
 /// Map strings to `TagValue`s.
 ///
 /// This structure is a tailored wrapper around `HashMap`s.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SpanTags(HashMap<String, TagValue>);
 
 impl SpanTags {

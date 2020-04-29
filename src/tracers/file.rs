@@ -167,8 +167,8 @@ impl FileTracer {
         buffer.push_str(&format!("===> Span ID: {}\n", context.span_id));
 
         let finish = span.finish_time();
-        let start = span.start_time().clone();
-        let duration = finish.duration_since(start).unwrap();
+        let start = span.start_time();
+        let duration = finish.duration_since(*start).unwrap();
         let secs = duration.as_secs() as f64;
         let delta = secs + duration.subsec_nanos() as f64 * 1e-9;
         buffer.push_str(&format!("===> Span Duration: {}\n", delta));
@@ -186,8 +186,8 @@ impl FileTracer {
                 }
             };
             let ref_type = match reference {
-                &SpanReference::ChildOf(_) => "Child of span ID",
-                &SpanReference::FollowsFrom(_) => "Follows from span ID"
+                SpanReference::ChildOf(_) => "Child of span ID",
+                SpanReference::FollowsFrom(_) => "Follows from span ID"
             };
             buffer.push_str(&format!("===>   * {}: {}\n", ref_type, ref_id));
         }
@@ -204,10 +204,10 @@ impl FileTracer {
         buffer.push_str("===> Tags: [\n");
         for (tag, value) in tags {
             let value = match value {
-                &TagValue::Boolean(v) => v.to_string(),
-                &TagValue::Float(v) => v.to_string(),
-                &TagValue::Integer(v) => v.to_string(),
-                &TagValue::String(ref v) => v.clone(),
+                TagValue::Boolean(v) => v.to_string(),
+                TagValue::Float(v) => v.to_string(),
+                TagValue::Integer(v) => v.to_string(),
+                TagValue::String(ref v) => v.clone(),
             };
             buffer.push_str(&format!("===>   * {}: {}\n", tag, value));
         }
@@ -224,10 +224,10 @@ impl FileTracer {
             fields.sort_by_key(|&(k, _)| k);
             for (key, value) in fields {
                 let value = match value {
-                    &LogValue::Boolean(v) => v.to_string(),
-                    &LogValue::Float(v) => v.to_string(),
-                    &LogValue::Integer(v) => v.to_string(),
-                    &LogValue::String(ref v) => v.clone(),
+                    LogValue::Boolean(v) => v.to_string(),
+                    LogValue::Float(v) => v.to_string(),
+                    LogValue::Integer(v) => v.to_string(),
+                    LogValue::String(ref v) => v.clone(),
                 };
                 buffer.push_str(&format!("===>     * {}: {}\n", key, value));
             }

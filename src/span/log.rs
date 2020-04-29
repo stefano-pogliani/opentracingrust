@@ -40,7 +40,7 @@ use std::time::SystemTime;
 ///     span.log(log);
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Log {
     fields: LogFileds,
     timestamp: Option<SystemTime>,
@@ -65,7 +65,7 @@ impl Log {
 
     /// Sets the timestamp to now if not set.
     pub fn at_or_now(&mut self) {
-        if let None = self.timestamp {
+        if self.timestamp.is_none() {
             self.timestamp = Some(SystemTime::now())
         }
     }
@@ -91,7 +91,7 @@ impl Log {
 
 
 /// Structured log fields container.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct LogFileds(HashMap<String, LogValue>);
 
 impl LogFileds {

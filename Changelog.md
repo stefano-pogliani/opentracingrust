@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.0] - 2020-04-29
 ### Changed
 - Updated dependencies to latest available.
+- Update to rust 2018 edition.
 
 ## [0.3.4] - 2019-06-29
 ### Changed

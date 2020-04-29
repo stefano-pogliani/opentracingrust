@@ -90,7 +90,7 @@ use super::SpanReference;
 /// ```
 pub struct SpanContext {
     baggage: HashMap<String, String>,
-    inner: Box<ImplContext>,
+    inner: Box<dyn ImplContext>,
 }
 
 impl SpanContext {

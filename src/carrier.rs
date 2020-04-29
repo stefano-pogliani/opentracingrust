@@ -27,9 +27,9 @@ use std::io;
 /// }
 /// ```
 pub enum ExtractFormat<'a> {
-    Binary(Box<&'a mut self::io::Read>),
-    HttpHeaders(Box<&'a MapCarrier>),
-    TextMap(Box<&'a MapCarrier>)
+    Binary(Box<&'a mut dyn self::io::Read>),
+    HttpHeaders(Box<&'a dyn MapCarrier>),
+    TextMap(Box<&'a dyn MapCarrier>)
 }
 
 
@@ -54,9 +54,9 @@ pub enum ExtractFormat<'a> {
 /// }
 /// ```
 pub enum InjectFormat<'a> {
-    Binary(Box<&'a mut self::io::Write>),
-    HttpHeaders(Box<&'a mut MapCarrier>),
-    TextMap(Box<&'a mut MapCarrier>)
+    Binary(Box<&'a mut dyn self::io::Write>),
+    HttpHeaders(Box<&'a mut dyn MapCarrier>),
+    TextMap(Box<&'a mut dyn MapCarrier>)
 }
 
 
@@ -84,7 +84,7 @@ impl MapCarrier for HashMap<String, String> {
     }
 
     fn get(&self, key: &str) -> Option<String> {
-        self.get(key).map(|v| v.clone())
+        self.get(key).cloned()
     }
 
     fn set(&mut self, key: &str, value: &str) {
@@ -98,7 +98,7 @@ impl MapCarrier for BTreeMap<String, String> {
     }
 
     fn get(&self, key: &str) -> Option<String> {
-        self.get(key).map(|v| v.clone())
+        self.get(key).cloned()
     }
 
     fn set(&mut self, key: &str, value: &str) {

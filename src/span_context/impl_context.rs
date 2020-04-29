@@ -78,10 +78,10 @@ pub trait ImplContext : Send {
     /// `SpanContext`s store implementations `ImplContext`s using `Box`es.  
     /// This method is used by the `SpanContext::impl_context` generic method
     /// to downcast the boxed `ImplContext` using the `std::any::Any` interface.
-    fn impl_context(&self) -> &Any;
+    fn impl_context(&self) -> &dyn Any;
 
     /// Clones an `ImplContext` trait object into a new `ImplContext` trait object.
-    fn clone(&self) -> Box<ImplContext>;
+    fn clone(&self) -> Box<dyn ImplContext>;
 
     /// Allows the `ImplContext` to add references.
     ///
@@ -141,11 +141,11 @@ impl<T: Any + Clone + Send + SpanReferenceAware> ImplContextBox<T> {
 }
 
 impl<T: Any + Clone + Send + SpanReferenceAware> ImplContext for ImplContextBox<T> {
-    fn impl_context(&self) -> &Any {
+    fn impl_context(&self) -> &dyn Any {
         &self.inner
     }
 
-    fn clone(&self) -> Box<ImplContext> {
+    fn clone(&self) -> Box<dyn ImplContext> {
         Box::new(ImplContextBox {
             inner: self.inner.clone()
         })

@@ -80,7 +80,7 @@ impl<T, E> FailSpan for Result<T, E> where
             span.log(Log::new()
                 .log("event", "error")
                 .log("message", format!("{}", error))
-                .log("error.kind", error.description())
+                .log("error.kind", error.to_string())
                 .log("error.object", format!("{:?}", error))
             );
         }
@@ -105,7 +105,7 @@ mod tests {
         fn description(&self) -> &str {
             "SomeError"
         }
-        fn cause(&self) -> Option<&Error> {
+        fn cause(&self) -> Option<&dyn Error> {
             None
         }
     }
